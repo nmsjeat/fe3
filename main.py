@@ -25,6 +25,5 @@ bch_trade = trade[trade['symbol'] == 'BCHUSD']
 
 # Exponential weighted moving average
 xbt_quote = xbt_quote.assign(BuyPressure=lambda df: (df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean())
-eth_quote = eth_quote.assign(BuyPressure=lambda df: df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean()
-bch_quote = bch_quote.assign(BuyPressure=lambda df: df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean()
-
+eth_quote = eth_quote.assign(BuyPressure=lambda df: (df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean())
+bch_quote = bch_quote.assign(BuyPressure=lambda df: (df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean())
