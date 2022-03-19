@@ -14,7 +14,6 @@ trade = pd.read_csv(file2, sep=',', index_col=0)
 quote.index = pd.to_datetime(quote.index, format="%Y-%m-%dD%H:%M:%S.%f")
 trade.index = pd.to_datetime(trade.index, format="%Y-%m-%dD%H:%M:%S.%f")
 
-
 # Separate into three dataframes based on crypto
 xbt_quote = quote[quote['symbol'] == 'XBTUSD']
 eth_quote = quote[quote['symbol'] == 'ETHUSD']
@@ -25,14 +24,7 @@ eth_trade = trade[trade['symbol'] == 'ETHUSD']
 bch_trade = trade[trade['symbol'] == 'BCHUSD']
 
 # Exponential weighted moving average
-assets = ['xbt', 'eth', 'bch']
-
-for a in assets:
-    a+'_quote' = eval(a+'_quote').assign(BuyPressure=lambda df: (df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean())
-
-
-
+xbt_quote = xbt_quote.assign(BuyPressure=lambda df: (df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean())
+eth_quote = eth_quote.assign(BuyPressure=lambda df: df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean()
 bch_quote = bch_quote.assign(BuyPressure=lambda df: df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean()
-bch_quote = bch_quote.assign(BuyPressure=lambda df: df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean()
-
 
