@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
 
+
 def resample_df(df_quote, df_trade, ival='1s'):
     """
     -Resamples data into ival intervals
