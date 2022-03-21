@@ -46,14 +46,15 @@ bch_quote = resample_df(bch_quote, ival)
 xbt_1 = xbt_quote.resample(ival).last().rename(columns = {i:('last_'+i if i != 'symbol' else i) for i in xbt_quote.columns})
 xbt_2 = xbt_quote.resample(ival).mean().rename(columns = {i:'mean_'+i for i in xbt_quote.columns})
 xbt_3 = xbt_quote.resample(ival).std().rename(columns = {i:'std_'+i for i in xbt_quote.columns})
-xbt_quote = xbt_1.merge(xbt_2, left_index=True, right_index=True).merge(xbt_3, left_index=True, right_index=True)
+xbt_quote = xbt_1.merge(xbt_2, left_index=True, right_index=True, how='outer').merge(xbt_3, left_index=True, right_index=True, how='outer')
 
-
-
-
-
-
-
+xbt_4 = xbt_trade.resample(ival).last()[['symbol', 'side', 'size', 'price']].rename(columns = {i:('last_'+i if i != 'symbol' else i) for i in xbt_trade.columns})
+xbt_5 = xbt_trade.resample(ival).mean()[['size', 'price']].rename(columns = {i:'mean_'+i for i in xbt_trade.columns})
+xbt_6 = xbt_trade.resample(ival).std()[['size', 'price']].rename(columns = {i:'std_'+i for i in xbt_trade.columns})
+xbt_7 = xbt_trade[xbt_trade['side'] == 'Buy'].resample(ival).agg({'side':'count', 'size':'sum'}).rename(columns={'side':'buys', 'size':'buyVolume'})
+xbt_8 = xbt_trade[xbt_trade['side'] == 'Sell'].resample(ival).agg({'side':'count', 'size':'sum'}).rename(columns={'side':'sells', 'size':'sellVolume'})
+xbt_trade = xbt_4.merge(xbt_5, left_index=True, right_index=True, how='outer').merge(xbt_6, left_index=True, right_index=True, how='outer')\
+                 .merge(xbt_7, left_index=True, right_index=True, how='outer').merge(xbt_8, left_index=True, right_index=True, how='outer')
 
 
 # Exponential weighted moving average
