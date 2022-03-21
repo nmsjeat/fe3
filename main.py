@@ -6,12 +6,24 @@ import statsmodels.api as sm
 
 
 # Resamples data into ival intervals
-def resample_df(df_quote, ival):
+def resample_df(df_quote, df_trade, ival):
     df_1 = df_quote.resample(ival).last().rename(columns = {i:('last_'+i if i != 'symbol' else i) for i in df_quote.columns})
     df_2 = df_quote.resample(ival).mean().rename(columns = {i:'mean_'+i for i in df_quote.columns})
-    df_3 = df_quote.resample(ival).std(ddof=0).rename(columns = {i:'std_'+i for i in df_quote.columns})
-    df_quote = df_1.merge(df_2, left_index=True, right_index=True).merge(df_3, left_index=True, right_index=True)
-    return df_quote
+    df_3 = df_quote.resample(ival).std().rename(columns = {i:'std_'+i for i in df_quote.columns})
+    df_quote = df_1.merge(df_2, left_index=True, right_index=True, how='outer').merge(df_3, left_index=True, right_index=True, how='outer').dropna()
+
+    df_4 = df_trade.resample(ival).last()[['side', 'size', 'price']].rename(columns = {i:'last_'+i for i in df_trade.columns})
+    df_5 = df_trade.resample(ival).mean()[['size', 'price']].rename(columns = {i:'mean_'+i for i in df_trade.columns})
+    df_6 = df_trade.resample(ival).std(ddof=0)[['size', 'price']].rename(columns = {i:'std_'+i for i in df_trade.columns})
+
+    df_7 = df_trade[df_trade['side'] == 'Buy'].resample(ival).agg({'side':'count', 'size':'sum'}).rename(columns={'side':'buys', 'size':'buyVolume'})
+    df_8 = df_trade[df_trade['side'] == 'Sell'].resample(ival).agg({'side':'count', 'size':'sum'}).rename(columns={'side':'sells', 'size':'sellVolume'})
+    df_quote = df_quote.merge(df_7, left_index=True, right_index=True, how='left').merge(df_8, left_index=True, right_index=True, how='left').fillna(0)
+
+    df_trade = df_4.merge(df_5, left_index=True, right_index=True, how='outer').merge(df_6, left_index=True, right_index=True, how='outer')
+
+    df = df_quote.merge(df_trade, left_index=True, right_index=True, how='left')
+    return df
 
 
 # Read files
@@ -37,24 +49,11 @@ bch_trade = trade[trade['symbol'] == 'BCHUSD']
 # Resample data into (1s) intervals
 ival = '1s'
 
-xbt_quote = resample_df(xbt_quote, ival)
-eth_quote = resample_df(eth_quote, ival)
-bch_quote = resample_df(bch_quote, ival)
+xbt = resample_df(xbt_quote, xbt_trade, ival)
+eth = resample_df(eth_quote, eth_trade, ival)
+bch = resample_df(bch_quote, bch_trade, ival)
 
 
-
-xbt_1 = xbt_quote.resample(ival).last().rename(columns = {i:('last_'+i if i != 'symbol' else i) for i in xbt_quote.columns})
-xbt_2 = xbt_quote.resample(ival).mean().rename(columns = {i:'mean_'+i for i in xbt_quote.columns})
-xbt_3 = xbt_quote.resample(ival).std().rename(columns = {i:'std_'+i for i in xbt_quote.columns})
-xbt_quote = xbt_1.merge(xbt_2, left_index=True, right_index=True, how='outer').merge(xbt_3, left_index=True, right_index=True, how='outer')
-
-xbt_4 = xbt_trade.resample(ival).last()[['symbol', 'side', 'size', 'price']].rename(columns = {i:('last_'+i if i != 'symbol' else i) for i in xbt_trade.columns})
-xbt_5 = xbt_trade.resample(ival).mean()[['size', 'price']].rename(columns = {i:'mean_'+i for i in xbt_trade.columns})
-xbt_6 = xbt_trade.resample(ival).std()[['size', 'price']].rename(columns = {i:'std_'+i for i in xbt_trade.columns})
-xbt_7 = xbt_trade[xbt_trade['side'] == 'Buy'].resample(ival).agg({'side':'count', 'size':'sum'}).rename(columns={'side':'buys', 'size':'buyVolume'})
-xbt_8 = xbt_trade[xbt_trade['side'] == 'Sell'].resample(ival).agg({'side':'count', 'size':'sum'}).rename(columns={'side':'sells', 'size':'sellVolume'})
-xbt_trade = xbt_4.merge(xbt_5, left_index=True, right_index=True, how='outer').merge(xbt_6, left_index=True, right_index=True, how='outer')\
-                 .merge(xbt_7, left_index=True, right_index=True, how='outer').merge(xbt_8, left_index=True, right_index=True, how='outer')
 
 
 # Exponential weighted moving average
@@ -74,17 +73,6 @@ bch_quote = bch_quote.assign(MicroPriceAdjustment=lambda df: df['WeightedMid'] -
 
 
 
-
-
-
-
-
-# xbt_quote.resample(ival).agg({'bidSize': 'sum',
-#                               'bidPrice': 'last',
-#                               'askSize': lambda x: x.tail(1) - 1
-#                               }).rename(columns={'bidSize': 'last_bidSize'})
-
-
 # y = bch_quote.resample('1s').first().dropna()['bidPrice']
 # y = (y.shift(1) - y)[1:]
 # x = bch_quote.resample('1s').first().dropna()['MicroPriceAdjustment'][1:]
@@ -92,7 +80,4 @@ bch_quote = bch_quote.assign(MicroPriceAdjustment=lambda df: df['WeightedMid'] -
 # x = sm.add_constant(x, has_constant='add')
 # model = sm.OLS(y,x).fit()
 # model.summary()
-
-
-
 
