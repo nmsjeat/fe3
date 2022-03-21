@@ -25,6 +25,17 @@ def resample_df(df_quote, df_trade, ival):
     df = df_quote.merge(df_trade, left_index=True, right_index=True, how='left')
     return df
 
+def micro_price_adjustment(df, alpha=0.95, method='mean'):
+    # Exponential weighted moving average
+    df = df.assign(BuyPressure=lambda df: (df[method+'_bidSize'] / (df[method+'_bidSize'] + df[method+'_askSize'])).ewm(alpha=alpha).mean())
+    
+    # Weighted mid-price
+    df = df.assign(WeightedMid=lambda df: df['BuyPressure'] * df[method+'_askPrice'] + (1 - df['BuyPressure']) * df[method+'_bidPrice'])
+    
+    # Micro price adjustment
+    df = df.assign(MicroPriceAdjustment=lambda df: df['WeightedMid'] - 0.5 * (df[method+'_askPrice'] + df[method+'_bidPrice']))
+    return df
+
 
 # Read files
 file1 = '../quote_20220318.csv'
@@ -53,31 +64,20 @@ xbt = resample_df(xbt_quote, xbt_trade, ival)
 eth = resample_df(eth_quote, eth_trade, ival)
 bch = resample_df(bch_quote, bch_trade, ival)
 
+xbt = micro_price_adjustment(xbt)
+eth = micro_price_adjustment(eth)
+bch = micro_price_adjustment(bch)
 
 
 
-# Exponential weighted moving average
-xbt_quote = xbt_quote.assign(BuyPressure=lambda df: (df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean())
-eth_quote = eth_quote.assign(BuyPressure=lambda df: (df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean())
-bch_quote = bch_quote.assign(BuyPressure=lambda df: (df['bidSize'] / (df['bidSize'] + df['askSize'])).ewm(alpha=0.95).mean())
-
-# Weighted mid-price
-xbt_quote = xbt_quote.assign(WeightedMid=lambda df: df['BuyPressure'] * df['askPrice'] + (1 - df['BuyPressure']) * df['bidPrice'])
-eth_quote = eth_quote.assign(WeightedMid=lambda df: df['BuyPressure'] * df['askPrice'] + (1 - df['BuyPressure']) * df['bidPrice'])
-bch_quote = bch_quote.assign(WeightedMid=lambda df: df['BuyPressure'] * df['askPrice'] + (1 - df['BuyPressure']) * df['bidPrice'])
-
-# Micro price adjustment
-xbt_quote = xbt_quote.assign(MicroPriceAdjustment=lambda df: df['WeightedMid'] - 0.5 * (df['askPrice'] + df['bidPrice']))
-eth_quote = eth_quote.assign(MicroPriceAdjustment=lambda df: df['WeightedMid'] - 0.5 * (df['askPrice'] + df['bidPrice']))
-bch_quote = bch_quote.assign(MicroPriceAdjustment=lambda df: df['WeightedMid'] - 0.5 * (df['askPrice'] + df['bidPrice']))
 
 
 
-# y = bch_quote.resample('1s').first().dropna()['bidPrice']
+
+# y = bch['last_bidPrice']
 # y = (y.shift(1) - y)[1:]
-# x = bch_quote.resample('1s').first().dropna()['MicroPriceAdjustment'][1:]
-# x[x.between(-0.05,0.05)] = 0
+# x = bch['MicroPriceAdjustment'][1:]
+# # x[x.between(-0.05,0.05)] = 0
 # x = sm.add_constant(x, has_constant='add')
 # model = sm.OLS(y,x).fit()
 # model.summary()
-
