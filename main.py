@@ -7,9 +7,9 @@ import statsmodels.api as sm
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
-    -Resamples data into ival intervals
-    -Creates features
-    -Merges trade and quotedata
+    - Resamples data into ival intervals
+    - Creates features
+    - Merges trade and quotedata
 
     Parameters
     ----------
@@ -62,7 +62,7 @@ def resample_df(df_quote, df_trade, ival='1s'):
 
 def micro_price_adjustment(df, alpha=0.95, method='mean'):
     """
-    -Calculates the micro price adjustment
+    Calculates the micro price adjustment
     
     Parameters
     ----------
