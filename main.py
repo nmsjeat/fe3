@@ -90,6 +90,24 @@ def micro_price_adjustment(df, alpha=0.95, method='mean'):
     
     return df
 
+def relative_bid_ask_spread(df, method='last'):
+    # Relative spread between bid and ask
+    df = df.assign(RelativeSpread=lambda df: (df['last_askPrice'] - df['last_bidPrice']) / df['WeightedMid'])
+    
+    return df
+
+def relative_buys(df):
+    # Relative buys to sells, NaN if no trades
+    df = df.assign(RelativeBuys=lambda df: (df['buys'] / (df['buys'] + df['sells'])))
+    
+    return df
+
+def sales_dummy(df):
+    # Sales dummy, 1 if there was sales during last time period, else 0
+    df['SalesDummy'] = [0 if x + y == 0 else 1 for (x, y) in df[['buys', 'sells']].values]
+    
+    return df
+
 
 # Read files
 file1 = '../quote_20220318.csv'
