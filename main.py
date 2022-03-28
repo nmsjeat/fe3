@@ -108,6 +108,25 @@ def sales_dummy(df):
     
     return df
 
+def y_vars(df):
+    # Define ticksizes
+    ticksize = {'XBTUSD':0.5, 'ETHUSD':0.05, 'BCHUSD':0.05}
+    symbol = df.iloc[0].at['symbol']
+    
+    df['y_changeBidPrice'] = (xbt['last_bidPrice'] - xbt['last_bidPrice'].shift(1)).shift(-1) / ticksize[symbol]
+    df['y_changeAskPrice'] = (xbt['last_askPrice'] - xbt['last_askPrice'].shift(1)).shift(-1) / ticksize[symbol]
+
+    df['y_bidTickDown'] = np.sign(df['last_bidPrice'].diff().shift(-1)).replace({1:0, -1:1})
+    df['y_askTickUp'] = np.sign(df['last_askPrice'].diff().shift(-1)).replace({-1:0})
+    
+    df['y_bidSize'] = df['last_bidSize'].shift(-1)
+    df['y_askSize'] = df['last_askSize'].shift(-1)
+    
+    df['y_sells'] = df['sells'].shift(-1)
+    df['y_buys'] = df['buys'].shift(-1)
+    
+    return df
+
 
 # Read files
 file1 = '../quote_20220318.csv'
@@ -142,15 +161,37 @@ xbt = micro_price_adjustment(xbt, alpha=.95, method='mean')
 eth = micro_price_adjustment(eth, alpha=.95, method='mean')
 bch = micro_price_adjustment(bch, alpha=.95, method='mean')
 
+# Calculate predicted y variables
+xbt = y_vars(xbt)
+eth = y_vars(eth)
+bch = y_vars(bch)
+
+# Calculate relative bid-ask spread
+xbt = relative_bid_ask_spread(xbt)
+eth = relative_bid_ask_spread(eth)
+bch = relative_bid_ask_spread(bch)
+
+# Calculate relative buys
+xbt = relative_buys(xbt)
+eth = relative_buys(eth)
+bch = relative_buys(bch)
+
+# Add sales dummy (1 if there was sales during past interval)
+xbt = sales_dummy(xbt)
+eth = sales_dummy(eth)
+bch = sales_dummy(bch)
+
+
+
 
 # Linear Regression
 
 # Predict change in last best bid price with the micro price adjustment
 
-y = bch['last_bidPrice']
-y = (y.shift(1) - y)[1:]
-x = bch['MicroPriceAdjustment'][1:]
-x[x.between(-0.05,0.05)] = 0
-x = sm.add_constant(x, has_constant='add')
-model = sm.OLS(y,x).fit()
-model.summary()
+# y = bch['last_bidPrice']
+# y = (y.shift(1) - y)[1:]
+# x = bch['MicroPriceAdjustment'][1:]
+# x[x.between(-0.05,0.05)] = 0
+# x = sm.add_constant(x, has_constant='add')
+# model = sm.OLS(y,x).fit()
+# model.summary()
