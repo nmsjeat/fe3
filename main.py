@@ -3,6 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LogisticRegression, LinearRegression
 
 
 def resample_df(df_quote, df_trade, ival='1s'):
@@ -182,6 +186,17 @@ eth = sales_dummy(eth)
 bch = sales_dummy(bch)
 
 
+
+# NORMALIZATION
+
+
+
+# PREDICTIONS
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
+
+
+
+# 
 
 
 # Linear Regression
