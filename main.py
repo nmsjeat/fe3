@@ -117,8 +117,8 @@ def y_vars(df):
     ticksize = {'XBTUSD':0.5, 'ETHUSD':0.05, 'BCHUSD':0.05}
     symbol = df.iloc[0].at['symbol']
     
-    df['y_changeBidPrice'] = (xbt['last_bidPrice'] - xbt['last_bidPrice'].shift(1)).shift(-1) / ticksize[symbol]
-    df['y_changeAskPrice'] = (xbt['last_askPrice'] - xbt['last_askPrice'].shift(1)).shift(-1) / ticksize[symbol]
+    df['y_changeBidPrice'] = (df['last_bidPrice'] - df['last_bidPrice'].shift(1)).shift(-1) / ticksize[symbol]
+    df['y_changeAskPrice'] = (df['last_askPrice'] - df['last_askPrice'].shift(1)).shift(-1) / ticksize[symbol]
 
     df['y_bidTickDown'] = np.sign(df['last_bidPrice'].diff().shift(-1)).replace({1:0, -1:1})
     df['y_askTickUp'] = np.sign(df['last_askPrice'].diff().shift(-1)).replace({-1:0})
