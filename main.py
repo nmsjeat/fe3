@@ -7,6 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.preprocessing import minmax_scale
+from matplotlib import rc_file_defaults as plotdefaults
 
 
 def resample_df(df_quote, df_trade, ival='1s'):
@@ -102,8 +104,8 @@ def relative_bid_ask_spread(df, method='last'):
 
 def relative_buys(df):
     # Relative buys to sells, NaN if no trades
-    df = df.assign(RelativeBuys=lambda df: (df['buys'] / (df['buys'] + df['sells'])))
-    
+    df = df.assign(RelativeBuys=lambda df: 2*(df['buys'] / (df['buys'] + df['sells']))-1)
+    df['RelativeBuys'] = df['RelativeBuys'].fillna(0)
     return df
 
 def sales_dummy(df):
@@ -185,19 +187,38 @@ xbt = sales_dummy(xbt)
 eth = sales_dummy(eth)
 bch = sales_dummy(bch)
 
+# HISTOGRAMS
+
+for i, col in enumerate(bch.columns):
+    if i > 1:
+        plt.figure(i)
+        plt.hist(np.log(bch[col].dropna()+1), bins=30)
+        plt.title("log_"+col)
+        plt.show()
+
+plt.figure()
+plt.hist((bch['MicroPriceAdjustment']-bch['MicroPriceAdjustment'].mean())/np.std(bch['MicroPriceAdjustment']), bins=30)
+plt.title('MicroPriceAdjustement')
+plt.show()   
 
 
-# NORMALIZATION
+# HEATMAP
 
-
+cor = xbt.corr()
+plt.figure(0, figsize=(9,4))
+sns.set(font_scale=0.4)
+hm = sns.heatmap(cor, cmap='RdBu_r', linewidth=0.5, vmin=-1, vmax=1, annot=True, fmt='.2f')
+plt.title('Heatmap of indicator correlations', fontsize=10)
+plt.savefig('heatmap', dpi=400, bbox_inches='tight')
+plt.show()
+plotdefaults()
 
 # PREDICTIONS
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
 
-
-
-# 
-
+X = ...
+y = ...
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
+ 
 
 # Linear Regression
 
