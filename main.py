@@ -114,6 +114,18 @@ def sales_dummy(df):
     
     return df
 
+def relative_smas(df, method='mean', short=60, long=300):
+    df['BidSizeSMA'] = df[method+'_bidSize'].rolling(short, min_periods=1).mean() / df[method+'_bidSize']
+    df['AskSizeSMA'] = df[method+'_askSize'].rolling(short, min_periods=1).mean() / df[method+'_askSize']
+    
+    df['BidPriceSMA_s'] = df[method+'_bidPrice'].rolling(short, min_periods=1).mean() / df[method+'_bidPrice']
+    df['AskPriceSMA_s'] = df[method+'_askPrice'].rolling(short, min_periods=1).mean() / df[method+'_askPrice']
+    
+    df['BidPriceSMA_l'] = df[method+'_bidPrice'].rolling(long, min_periods=1).mean() / df[method+'_bidPrice']
+    df['AskPriceSMA_l'] = df[method+'_askPrice'].rolling(long, min_periods=1).mean() / df[method+'_askPrice']
+    
+    return df
+
 def y_vars(df):
     # Define ticksizes
     ticksize = {'XBTUSD':0.5, 'ETHUSD':0.05, 'BCHUSD':0.05}
@@ -133,6 +145,30 @@ def y_vars(df):
     
     return df
 
+def clean_columns(df):
+    # Define ticksizes
+    ticksize = {'XBTUSD':0.5, 'ETHUSD':0.05, 'BCHUSD':0.05}
+    symbol = df.iloc[0].at['symbol']
+    
+    df['std_bidSize'] /= df['mean_bidSize']
+    df['std_askSize'] /= df['mean_askSize']
+    
+    # Sell -> -1, Buy -> 1, nan -> 0
+    df['last_side'] = [0 if pd.isna(x) else 1 if x=='Buy' else -1 for x in df['last_side']]
+    
+    df['last_size'] = df['last_size'].fillna(0)
+    df['std_size'] = df['last_size'].fillna(0)
+    
+    df['std_price'] = df['std_price'].fillna(0) / ticksize[symbol]
+    
+    df['MicroPriceAdjustment'] /= ticksize[symbol]
+    
+    return df
+
+def normalize_x(df):
+    # TODO: add normalization for each column
+    
+    return df
 
 # Read files
 file1 = '../quote_20220318.csv'
@@ -187,20 +223,39 @@ xbt = sales_dummy(xbt)
 eth = sales_dummy(eth)
 bch = sales_dummy(bch)
 
+# Calculate relative moving averages
+xbt = relative_smas(xbt)
+eth = relative_smas(eth)
+bch = relative_smas(bch)
+
+# Clean column values
+xbt = clean_columns(xbt)
+eth = clean_columns(eth)
+bch = clean_columns(bch)
+
+
 # HISTOGRAMS
 
-for i, col in enumerate(bch.columns):
-    if i > 1:
-        plt.figure(i)
-        plt.hist(np.log(bch[col].dropna()+1), bins=30)
-        plt.title("log_"+col)
-        plt.show()
+# for i, col in enumerate(bch.columns):
+#     if i > 1:
+#         plt.figure(i)
+#         plt.hist(np.log(bch[col].dropna()+1), bins=30)
+#         plt.title("log_"+col)
+#         plt.show()
 
-plt.figure()
-plt.hist((bch['MicroPriceAdjustment']-bch['MicroPriceAdjustment'].mean())/np.std(bch['MicroPriceAdjustment']), bins=30)
-plt.title('MicroPriceAdjustement')
-plt.show()   
+# plt.figure()
+# plt.hist((bch['MicroPriceAdjustment']-bch['MicroPriceAdjustment'].mean())/np.std(bch['MicroPriceAdjustment']), bins=30)
+# plt.title('MicroPriceAdjustement')
+# plt.show()   
 
+# a = 'BidPriceSMA_l'
+# plt.hist(xbt[a], bins=100)
+# plt.show()
+
+# plt.hist(np.log(xbt[a]), bins=100)
+# plt.show()
+
+# pd.qcut(xbt[a], q=[0,.10,.5,.90,1]).value_counts()
 
 # HEATMAP
 
@@ -215,9 +270,21 @@ plotdefaults()
 
 # PREDICTIONS
 
-X = ...
-y = ...
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
+# Get X columns from file
+file3 = 'x_values.xlsx'
+sheet = 'X_indicators'
+x_columns = pd.read_excel(file3, sheet_name=sheet, header=None)
+x_columns = x_columns[0].tolist()
+
+# Get y columns
+y_columns = [col for col in xbt.columns if col[:2]=='y_']
+
+# Get X and y (NOTE: here only xbt, add others later)
+X = xbt[x_columns]
+y = xbt[y_columns]
+
+
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
  
 
 # Linear Regression
