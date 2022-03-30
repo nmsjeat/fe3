@@ -233,6 +233,10 @@ xbt = clean_columns(xbt)
 eth = clean_columns(eth)
 bch = clean_columns(bch)
 
+# Normalize columns
+xbt = normalize_cols(xbt)
+eth = normalize_cols(eth)
+bch = normalize_cols(bch)
 
 # HISTOGRAMS
 
