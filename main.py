@@ -165,7 +165,7 @@ def clean_columns(df):
     
     return df
 
-def normalize_x(df):
+def normalize_cols(df):
     # TODO: add normalization for each column
     
     return df
