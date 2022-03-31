@@ -166,23 +166,29 @@ def clean_columns(df):
     return df
 
 def normalize_cols(df):
-    # TODO: add normalization for each column
     
     """
+    Transforms features of df with log x, log(1+x) and normalization methods
 
     Parameters
     ----------
-    df : TYPE
-        DESCRIPTION.
+    df : pandas.DataFrame
+        Dataframe with untransformed features
 
     Returns
     -------
-    df : TYPE
-        DESCRIPTION.
+    df : pandas.DataFrame
+        Transformed DataFrame
 
     """
     
+    logs = ['mean_bidSize', 'mean_askSize', 'last_size', 'mean_size', 'BidSizeSMA', 'AskSizeSMA']
+    logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'std_price']
+    norms = ['MicroPriceAdjustment', 'BidPriceSMA_s', 'AskPriceSMA_s', 'BidPriceSMA_l', 'AskPriceSMA_l']
     
+    df[logs] = df[logs].applymap(lambda x: np.log(x))
+    df[logs_1plus] = df[logs_1plus].applymap(lambda x: np.log(1+x))
+    df[norms] = df[norms].apply(lambda x: (x-x.mean())/x.std())
     
     return df
 
@@ -318,3 +324,6 @@ y = xbt[y_columns]
 # x = sm.add_constant(x, has_constant='add')
 # model = sm.OLS(y,x).fit()
 # model.summary()
+
+test = normalize_cols(bch)
+
