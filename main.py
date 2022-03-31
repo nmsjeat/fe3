@@ -186,8 +186,8 @@ def normalize_cols(df):
     """
     
     # Create lists for features in each transformation group
-    logs = ['mean_bidSize', 'mean_askSize', 'mean_size', 'BidSizeSMA', 'AskSizeSMA']
-    logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'last_size', 'std_price']
+    logs = ['mean_bidSize', 'mean_askSize', 'BidSizeSMA', 'AskSizeSMA']
+    logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'last_size', 'mean_size', 'std_price']
     norms = ['MicroPriceAdjustment', 'BidPriceSMA_s', 'AskPriceSMA_s', 'BidPriceSMA_l', 'AskPriceSMA_l']
     bins = ['RelativeSpread']
     
@@ -319,7 +319,7 @@ bch = normalize_cols(bch)
 # PREDICTIONS
 
 # Get X columns from file
-"""
+
 file3 = 'x_values.xlsx'
 sheet = 'X_indicators'
 x_columns = pd.read_excel(file3, sheet_name=sheet, header=None)
@@ -331,7 +331,7 @@ y_columns = [col for col in xbt.columns if col[:2]=='y_']
 # Get X and y (NOTE: here only xbt, add others later)
 X = xbt[x_columns]
 y = xbt[y_columns]
-"""
+
 
 # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
  
@@ -347,6 +347,4 @@ y = xbt[y_columns]
 # x = sm.add_constant(x, has_constant='add')
 # model = sm.OLS(y,x).fit()
 # model.summary()
-
-test = normalize_cols(bch)
 
