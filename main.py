@@ -156,6 +156,7 @@ def clean_columns(df):
     # Sell -> -1, Buy -> 1, nan -> 0
     df['last_side'] = [0 if pd.isna(x) else 1 if x=='Buy' else -1 for x in df['last_side']]
     
+    df['mean_size'] = df['mean_size'].fillna(0)
     df['last_size'] = df['last_size'].fillna(0)
     df['std_size'] = df['last_size'].fillna(0)
     
@@ -167,8 +168,10 @@ def clean_columns(df):
 
 def normalize_cols(df):
     
+    # TODO: bins variable (RelativeSpread) transformation
+    
     """
-    Transforms features of df with log x, log(1+x) and normalization methods
+    Transforms features of df with log x, log(1+x), bins, and normalization methods
 
     Parameters
     ----------
@@ -183,14 +186,16 @@ def normalize_cols(df):
     """
     
     # Create lists for features in each transformation group
-    logs = ['mean_bidSize', 'mean_askSize', 'last_size', 'mean_size', 'BidSizeSMA', 'AskSizeSMA']
-    logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'std_price']
+    logs = ['mean_bidSize', 'mean_askSize', 'mean_size', 'BidSizeSMA', 'AskSizeSMA']
+    logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'last_size', 'std_price']
     norms = ['MicroPriceAdjustment', 'BidPriceSMA_s', 'AskPriceSMA_s', 'BidPriceSMA_l', 'AskPriceSMA_l']
+    bins = ['RelativeSpread']
     
     # Transform features
     df[logs] = df[logs].applymap(lambda x: np.log(x))
     df[logs_1plus] = df[logs_1plus].applymap(lambda x: np.log(1+x))
     df[norms] = df[norms].apply(lambda x: (x-x.mean())/x.std())
+    df[bins] = ... # TODO
     
     # Returned transformed df
     return df
