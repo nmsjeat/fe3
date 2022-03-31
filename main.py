@@ -166,9 +166,58 @@ def clean_columns(df):
     return df
 
 def normalize_cols(df):
-    # TODO: add normalization for each column
     
+    """
+    Transforms features of df with log x, log(1+x) and normalization methods
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe with untransformed features
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        Transformed DataFrame
+
+    """
+    
+    # Create lists for features in each transformation group
+    logs = ['mean_bidSize', 'mean_askSize', 'last_size', 'mean_size', 'BidSizeSMA', 'AskSizeSMA']
+    logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'std_price']
+    norms = ['MicroPriceAdjustment', 'BidPriceSMA_s', 'AskPriceSMA_s', 'BidPriceSMA_l', 'AskPriceSMA_l']
+    
+    # Transform features
+    df[logs] = df[logs].applymap(lambda x: np.log(x))
+    df[logs_1plus] = df[logs_1plus].applymap(lambda x: np.log(1+x))
+    df[norms] = df[norms].apply(lambda x: (x-x.mean())/x.std())
+    
+    # Returned transformed df
     return df
+
+def heatmap(df):
+    """
+    Plots heatmap of features correlations in df
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe of features
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    cor = df.corr()
+    plt.figure(0, figsize=(9,4))
+    sns.set(font_scale=0.4)
+    hm = sns.heatmap(cor, cmap='RdBu_r', linewidth=0.5, vmin=-1, vmax=1, annot=True, fmt='.2f')
+    plt.title('Heatmap of indicator correlations', fontsize=10)
+    plt.savefig('heatmap', dpi=400, bbox_inches='tight')
+    plt.show()
+    plotdefaults()
 
 # Read files
 file1 = '../quote_20220318.csv'
@@ -261,16 +310,6 @@ bch = normalize_cols(bch)
 
 # pd.qcut(xbt[a], q=[0,.10,.5,.90,1]).value_counts()
 
-# HEATMAP
-
-cor = xbt.corr()
-plt.figure(0, figsize=(9,4))
-sns.set(font_scale=0.4)
-hm = sns.heatmap(cor, cmap='RdBu_r', linewidth=0.5, vmin=-1, vmax=1, annot=True, fmt='.2f')
-plt.title('Heatmap of indicator correlations', fontsize=10)
-plt.savefig('heatmap', dpi=400, bbox_inches='tight')
-plt.show()
-plotdefaults()
 
 # PREDICTIONS
 
@@ -302,3 +341,6 @@ y = xbt[y_columns]
 # x = sm.add_constant(x, has_constant='add')
 # model = sm.OLS(y,x).fit()
 # model.summary()
+
+test = normalize_cols(bch)
+
