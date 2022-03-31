@@ -182,14 +182,17 @@ def normalize_cols(df):
 
     """
     
+    # Create lists for features in each transformation group
     logs = ['mean_bidSize', 'mean_askSize', 'last_size', 'mean_size', 'BidSizeSMA', 'AskSizeSMA']
     logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'std_price']
     norms = ['MicroPriceAdjustment', 'BidPriceSMA_s', 'AskPriceSMA_s', 'BidPriceSMA_l', 'AskPriceSMA_l']
     
+    # Transform features
     df[logs] = df[logs].applymap(lambda x: np.log(x))
     df[logs_1plus] = df[logs_1plus].applymap(lambda x: np.log(1+x))
     df[norms] = df[norms].apply(lambda x: (x-x.mean())/x.std())
     
+    # Returned transformed df
     return df
 
 def heatmap(df):
