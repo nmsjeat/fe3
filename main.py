@@ -319,6 +319,7 @@ bch = normalize_cols(bch)
 # PREDICTIONS
 
 # Get X columns from file
+"""
 file3 = 'x_values.xlsx'
 sheet = 'X_indicators'
 x_columns = pd.read_excel(file3, sheet_name=sheet, header=None)
@@ -330,7 +331,7 @@ y_columns = [col for col in xbt.columns if col[:2]=='y_']
 # Get X and y (NOTE: here only xbt, add others later)
 X = xbt[x_columns]
 y = xbt[y_columns]
-
+"""
 
 # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
  
