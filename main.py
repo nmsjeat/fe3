@@ -168,6 +168,22 @@ def clean_columns(df):
 def normalize_cols(df):
     # TODO: add normalization for each column
     
+    """
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    df : TYPE
+        DESCRIPTION.
+
+    """
+    
+    
+    
     return df
 
 # Read files
