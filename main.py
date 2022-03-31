@@ -195,9 +195,8 @@ def normalize_cols(df):
     df[logs] = df[logs].applymap(lambda x: np.log(x))
     df[logs_1plus] = df[logs_1plus].applymap(lambda x: np.log(1+x))
     df[norms] = df[norms].apply(lambda x: (x-x.mean())/x.std())
-    # df['RelativeSpread'] = pd.qcut(df['RelativeSpread'], q=[0,.10,.5,.90,1], labels=False)
     df[bins] = ... # TODO, maybe df['RelativeSpread'] = pd.qcut(df['RelativeSpread'], q=[0,.10,.5,.90,1], labels=False)
-    
+    <
     # Returned transformed df
     return df
 
