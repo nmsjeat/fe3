@@ -192,6 +192,30 @@ def normalize_cols(df):
     
     return df
 
+def heatmap(df):
+    """
+    Plots heatmap of features correlations in df
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe of features
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    cor = df.corr()
+    plt.figure(0, figsize=(9,4))
+    sns.set(font_scale=0.4)
+    hm = sns.heatmap(cor, cmap='RdBu_r', linewidth=0.5, vmin=-1, vmax=1, annot=True, fmt='.2f')
+    plt.title('Heatmap of indicator correlations', fontsize=10)
+    plt.savefig('heatmap', dpi=400, bbox_inches='tight')
+    plt.show()
+    plotdefaults()
+
 # Read files
 file1 = '../quote_20220318.csv'
 file2 = '../trade_20220318.csv'
@@ -283,16 +307,6 @@ bch = normalize_cols(bch)
 
 # pd.qcut(xbt[a], q=[0,.10,.5,.90,1]).value_counts()
 
-# HEATMAP
-
-cor = xbt.corr()
-plt.figure(0, figsize=(9,4))
-sns.set(font_scale=0.4)
-hm = sns.heatmap(cor, cmap='RdBu_r', linewidth=0.5, vmin=-1, vmax=1, annot=True, fmt='.2f')
-plt.title('Heatmap of indicator correlations', fontsize=10)
-plt.savefig('heatmap', dpi=400, bbox_inches='tight')
-plt.show()
-plotdefaults()
 
 # PREDICTIONS
 
