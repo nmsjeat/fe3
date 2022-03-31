@@ -168,8 +168,6 @@ def clean_columns(df):
 
 def normalize_cols(df):
     
-    # TODO: bins variable (RelativeSpread) transformation
-    
     """
     Transforms features of df with log x, log(1+x), bins, and normalization methods
 
@@ -189,14 +187,13 @@ def normalize_cols(df):
     logs = ['mean_bidSize', 'mean_askSize', 'BidSizeSMA', 'AskSizeSMA']
     logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'last_size', 'mean_size', 'std_price']
     norms = ['MicroPriceAdjustment', 'BidPriceSMA_s', 'AskPriceSMA_s', 'BidPriceSMA_l', 'AskPriceSMA_l']
-    bins = ['RelativeSpread']
     
     # Transform features
     df[logs] = df[logs].applymap(lambda x: np.log(x))
     df[logs_1plus] = df[logs_1plus].applymap(lambda x: np.log(1+x))
     df[norms] = df[norms].apply(lambda x: (x-x.mean())/x.std())
-    df[bins] = ... # TODO, maybe df['RelativeSpread'] = pd.qcut(df['RelativeSpread'], q=[0,.10,.5,.90,1], labels=False)
-    <
+    df['RelativeSpread'] = pd.qcut(df['RelativeSpread'], q=[0,.10,.5,.90,1], labels=False) # bins
+    
     # Returned transformed df
     return df
 
