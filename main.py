@@ -6,9 +6,10 @@ import statsmodels.api as sm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.linear_model import LogisticRegression, LinearRegression, Lasso
 from sklearn.preprocessing import minmax_scale
 from matplotlib import rc_file_defaults as plotdefaults
+from sklearn.metrics import mean_squared_error
 
 
 def resample_df(df_quote, df_trade, ival='1s'):
@@ -326,12 +327,49 @@ x_columns = x_columns[0].tolist()
 y_columns = [col for col in xbt.columns if col[:2]=='y_']
 
 # Get X and y (NOTE: here only xbt, add others later)
-X = xbt[x_columns]
-y = xbt[y_columns]
+X = xbt[x_columns][:-1]
+y = xbt[y_columns][:-1]
 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
 
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
- 
+vars1 = y.columns.to_list()[0:2] + y.columns.to_list()[4:]
+vars2 = y.columns.to_list()[2:4]
+
+def linear_regression(X_train, X_test, y_train, y_test, variables):
+    print("Linear Regression")
+    for var in variables:
+        print("Variable:", var)
+        reg = LinearRegression().fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        score = reg.score(X_test, y_test[var])
+        mse = mean_squared_error(y_test[var], y_pred)
+        print(f"R^2: {score}\nMSE: {mse:.2f}\n")
+        
+def lasso_regression(X_train, X_test, y_train, y_test, variables):
+    # TODO: alpha with CV?  
+    print("Lasso Regression")
+    for var in variables:
+        print("Variable:", var)
+        reg = Lasso(alpha=0.1).fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        score = reg.score(X_test, y_test[var])
+        mse = mean_squared_error(y_test[var], y_pred)
+        print(f"R^2: {score}\nMSE: {mse:.2f}\n")
+
+def random_forest_regression(X_train, X_test, y_train, y_test, variables): 
+    print("Random Forest Regression")
+    for var in variables:
+        print("Variable:", var)
+        reg = RandomForestRegressor(n_estimators=100, max_depth=3).fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        score = reg.score(X_test, y_test[var])
+        mse = mean_squared_error(y_test[var], y_pred)
+        print(f"R^2: {score}\nMSE: {mse:.2f}\n")
+
+linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+
 
 # Linear Regression
 
@@ -344,6 +382,3 @@ y = xbt[y_columns]
 # x = sm.add_constant(x, has_constant='add')
 # model = sm.OLS(y,x).fit()
 # model.summary()
-
-eth.RelativeSpread.head()
-pd.qcut(eth['RelativeSpread'], q=[0,.10,.5,.90,1], labels=False)
