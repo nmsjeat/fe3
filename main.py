@@ -10,7 +10,7 @@ from sklearn.linear_model import LogisticRegression, LinearRegression, Lasso
 from sklearn.preprocessing import minmax_scale
 from matplotlib import rc_file_defaults as plotdefaults
 from sklearn.metrics import mean_squared_error
-
+from xgboost import XGBRegressor
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
@@ -365,10 +365,25 @@ def random_forest_regression(X_train, X_test, y_train, y_test, variables):
         score = reg.score(X_test, y_test[var])
         mse = mean_squared_error(y_test[var], y_pred)
         print(f"R^2: {score}\nMSE: {mse:.2f}\n")
+        
+def xgb_regression(X_train, X_test, y_train, y_test, variables): 
+    print("XGB Regression")
+    for var in variables:
+        print("Variable:", var)
+        reg = XGBRegressor(n_estimators=500, max_depth=3, eta=0.01, subsample=0.75, colsample_bytree=0.75, random_state=0).fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        score = reg.score(X_test, y_test[var])
+        mse = mean_squared_error(y_test[var], y_pred)
+        print(f"R^2: {score}\nMSE: {mse:.2f}\n")
 
 linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
 lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
 random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+
+# TODO: logistic regression (probabilistic labels), results dataframe, hyperparameter tuning (some), wrapper methods for selected models & final hyperparameter tunings
+
+
 
 
 # Linear Regression
