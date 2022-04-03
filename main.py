@@ -6,11 +6,13 @@ import statsmodels.api as sm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LogisticRegression, LinearRegression, Lasso
+from sklearn.linear_model import LogisticRegression, LinearRegression, LassoCV
 from sklearn.preprocessing import minmax_scale
 from matplotlib import rc_file_defaults as plotdefaults
 from sklearn.metrics import mean_squared_error
 from xgboost import XGBRegressor
+from sklearn.utils._testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
@@ -221,6 +223,115 @@ def heatmap(df):
     plt.savefig('heatmap', dpi=400, bbox_inches='tight')
     plt.show()
     plotdefaults()
+    
+def add_vars(df):
+    # Calculate micro price adjustments
+    df = micro_price_adjustment(df)
+    
+    # Calculate predicted y variables
+    df = y_vars(df)
+    
+    # Calculate relative bid-ask spread
+    df = relative_bid_ask_spread(df)
+    
+    # Calculate relative buys
+    df = relative_buys(df)
+    
+    # Add sales dummy (1 if there was sales during past interval)
+    df = sales_dummy(df)
+    
+    # Calculate relative moving averages
+    df = relative_smas(df)
+    
+    return df
+
+def linear_regression(X_train, X_test, y_train, y_test, variables):
+    # Initialize dataframes
+    df_score = pd.DataFrame(index=['linear regression'], columns=[variables])
+    df_mse = pd.DataFrame(index=['linear regression'], columns=[variables])
+    
+    for var in variables:
+        # Run regression for each variable
+        reg = LinearRegression().fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        
+        # Add results to dataframe
+        df_score[var] = reg.score(X_test, y_test[var])
+        df_mse[var] = mean_squared_error(y_test[var], y_pred)
+    
+    return df_score, df_mse
+
+@ignore_warnings(category=ConvergenceWarning)
+def lasso_regression(X_train, X_test, y_train, y_test, variables):
+    # Initialize dataframes
+    df_score = pd.DataFrame(index=['lasso regression'], columns=[variables])
+    df_mse = pd.DataFrame(index=['lasso regression'], columns=[variables])
+    
+    for var in variables:
+        # Find alpha with cross-validation, list potential alphas
+        ls = list(np.arange(0.01, 3, 0.01)) + list(np.arange(3, 20, 1)) + list(np.arange(20, 250, 5)) + list(np.arange(250, 5000, 50)) + list(np.arange(5000, 10000, 100))
+        
+        # Run regression for each variable
+        reg = LassoCV(cv=10, random_state=0, alphas=ls).fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        
+        # Add results to dataframe
+        df_score[var] = reg.score(X_test, y_test[var])
+        df_mse[var] = mean_squared_error(y_test[var], y_pred)
+        
+    return df_score, df_mse
+
+def random_forest_regression(X_train, X_test, y_train, y_test, variables): 
+    # Initialize dataframes
+    df_score = pd.DataFrame(index=['random forest regression'], columns=[variables])
+    df_mse = pd.DataFrame(index=['random forest regression'], columns=[variables])
+    
+    for var in variables:
+        # Run regression for each variable
+        reg = RandomForestRegressor(n_estimators=100, max_depth=3).fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        
+        # Add results to dataframe
+        df_score[var] = reg.score(X_test, y_test[var])
+        df_mse[var] = mean_squared_error(y_test[var], y_pred)
+    
+    return df_score, df_mse
+
+def xgb_regression(X_train, X_test, y_train, y_test, variables): 
+    # Initialize dataframes
+    df_score = pd.DataFrame(index=['random forest regression'], columns=[variables])
+    df_mse = pd.DataFrame(index=['random forest regression'], columns=[variables])
+    
+    for var in variables:
+        # Run regression for each variable
+        reg = XGBRegressor(n_estimators=500, max_depth=3, eta=0.01, subsample=0.75, colsample_bytree=0.75, random_state=0).fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        
+        # Add results to dataframe
+        df_score[var] = reg.score(X_test, y_test[var])
+        df_mse[var] = mean_squared_error(y_test[var], y_pred)
+
+    return df_score, df_mse
+
+def logit_regression(X_train, X_test, y_train, y_test, variables):
+    # Initialize dataframes
+    df_score = pd.DataFrame(index=['random forest regression'], columns=[variables])
+    df_mse = pd.DataFrame(index=['random forest regression'], columns=[variables])
+    reports = []
+    
+    for var in variables:
+        # Run regression for each variable
+        reg = LogisticRegression(random_state=0, class_weight='balanced').fit(X_train, y_train[var])
+        y_pred = reg.predict(X_test)
+        probabilities = reg.predict_proba(X_test)[:,1]
+        
+        # Add results to dataframe
+        df_score[var] = reg.score(X_test, y_test[var])
+        df_mse[var] = mean_squared_error(y_test[var], y_pred) # TODO: Niko, käykö järkeen käyttää y_pred vai probabilities?
+        reports.append(classification_report(y_test[var], y_pred))
+    
+    return df_score, df_mse, reports
+
 
 # Read files
 file1 = '../quote_20220318.csv'
@@ -250,35 +361,10 @@ xbt = resample_df(xbt_quote, xbt_trade, ival)
 eth = resample_df(eth_quote, eth_trade, ival)
 bch = resample_df(bch_quote, bch_trade, ival)
 
-# Calculate micro price adjustments
-xbt = micro_price_adjustment(xbt, alpha=.95, method='mean')
-eth = micro_price_adjustment(eth, alpha=.95, method='mean')
-bch = micro_price_adjustment(bch, alpha=.95, method='mean')
-
-# Calculate predicted y variables
-xbt = y_vars(xbt)
-eth = y_vars(eth)
-bch = y_vars(bch)
-
-# Calculate relative bid-ask spread
-xbt = relative_bid_ask_spread(xbt)
-eth = relative_bid_ask_spread(eth)
-bch = relative_bid_ask_spread(bch)
-
-# Calculate relative buys
-xbt = relative_buys(xbt)
-eth = relative_buys(eth)
-bch = relative_buys(bch)
-
-# Add sales dummy (1 if there was sales during past interval)
-xbt = sales_dummy(xbt)
-eth = sales_dummy(eth)
-bch = sales_dummy(bch)
-
-# Calculate relative moving averages
-xbt = relative_smas(xbt)
-eth = relative_smas(eth)
-bch = relative_smas(bch)
+# Add relevant variables
+xbt = add_vars(xbt)
+eth = add_vars(eth)
+bch = add_vars(bch)
 
 # Clean column values
 xbt = clean_columns(xbt)
@@ -289,29 +375,6 @@ bch = clean_columns(bch)
 xbt = normalize_cols(xbt)
 eth = normalize_cols(eth)
 bch = normalize_cols(bch)
-
-# HISTOGRAMS
-
-# for i, col in enumerate(bch.columns):
-#     if i > 1:
-#         plt.figure(i)
-#         plt.hist(np.log(bch[col].dropna()+1), bins=30)
-#         plt.title("log_"+col)
-#         plt.show()
-
-# plt.figure()
-# plt.hist((bch['MicroPriceAdjustment']-bch['MicroPriceAdjustment'].mean())/np.std(bch['MicroPriceAdjustment']), bins=30)
-# plt.title('MicroPriceAdjustement')
-# plt.show()   
-
-# a = 'BidPriceSMA_l'
-# plt.hist(xbt[a], bins=100)
-# plt.show()
-
-# plt.hist(np.log(xbt[a]), bins=100)
-# plt.show()
-
-# pd.qcut(xbt[a], q=[0,.10,.5,.90,1]).value_counts()
 
 
 # PREDICTIONS
@@ -335,56 +398,45 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffl
 vars1 = y.columns.to_list()[0:2] + y.columns.to_list()[4:]
 vars2 = y.columns.to_list()[2:4]
 
-def linear_regression(X_train, X_test, y_train, y_test, variables):
-    print("Linear Regression")
-    for var in variables:
-        print("Variable:", var)
-        reg = LinearRegression().fit(X_train, y_train[var])
-        y_pred = reg.predict(X_test)
-        score = reg.score(X_test, y_test[var])
-        mse = mean_squared_error(y_test[var], y_pred)
-        print(f"R^2: {score}\nMSE: {mse:.2f}\n")
-        
-def lasso_regression(X_train, X_test, y_train, y_test, variables):
-    # TODO: alpha with CV?  
-    print("Lasso Regression")
-    for var in variables:
-        print("Variable:", var)
-        reg = Lasso(alpha=0.1).fit(X_train, y_train[var])
-        y_pred = reg.predict(X_test)
-        score = reg.score(X_test, y_test[var])
-        mse = mean_squared_error(y_test[var], y_pred)
-        print(f"R^2: {score}\nMSE: {mse:.2f}\n")
 
-def random_forest_regression(X_train, X_test, y_train, y_test, variables): 
-    print("Random Forest Regression")
-    for var in variables:
-        print("Variable:", var)
-        reg = RandomForestRegressor(n_estimators=100, max_depth=3).fit(X_train, y_train[var])
-        y_pred = reg.predict(X_test)
-        score = reg.score(X_test, y_test[var])
-        mse = mean_squared_error(y_test[var], y_pred)
-        print(f"R^2: {score}\nMSE: {mse:.2f}\n")
-        
-def xgb_regression(X_train, X_test, y_train, y_test, variables): 
-    print("XGB Regression")
-    for var in variables:
-        print("Variable:", var)
-        reg = XGBRegressor(n_estimators=500, max_depth=3, eta=0.01, subsample=0.75, colsample_bytree=0.75, random_state=0).fit(X_train, y_train[var])
-        y_pred = reg.predict(X_test)
-        score = reg.score(X_test, y_test[var])
-        mse = mean_squared_error(y_test[var], y_pred)
-        print(f"R^2: {score}\nMSE: {mse:.2f}\n")
 
-linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+lr_score, lr_mse = linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2)
 
-# TODO: logistic regression (probabilistic labels), results dataframe, hyperparameter tuning (some), wrapper methods for selected models & final hyperparameter tunings
+scores = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
+mses = pd.concat([lr_mse, la_mse, rf_mse, xgb_mse, lt_mse])
 
 
 
+# TODO: divide before linear/lasso regression by mean?
+# TODO: hyperparameter tuning (some), wrapper methods for selected models & final hyperparameter tunings
+
+
+# HISTOGRAMS
+
+# for i, col in enumerate(bch.columns):
+#     if i > 1:
+#         plt.figure(i)
+#         plt.hist(np.log(bch[col].dropna()+1), bins=30)
+#         plt.title("log_"+col)
+#         plt.show()
+
+# plt.figure()
+# plt.hist((bch['MicroPriceAdjustment']-bch['MicroPriceAdjustment'].mean())/np.std(bch['MicroPriceAdjustment']), bins=30)
+# plt.title('MicroPriceAdjustement')
+# plt.show()   
+
+# a = 'BidPriceSMA_l'
+# plt.hist(xbt[a], bins=100)
+# plt.show()
+
+# plt.hist(np.log(xbt[a]), bins=100)
+# plt.show()
+
+# pd.qcut(xbt[a], q=[0,.10,.5,.90,1]).value_counts()
 
 # Linear Regression
 
