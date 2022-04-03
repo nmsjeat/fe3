@@ -288,7 +288,7 @@ def random_forest_regression(X_train, X_test, y_train, y_test, variables):
     
     for var in variables:
         # Run regression for each variable
-        reg = RandomForestRegressor(n_estimators=100, max_depth=3).fit(X_train, y_train[var])
+        reg = RandomForestRegressor(n_estimators=100, max_depth=3, min_samples_split=50, random_state=0).fit(X_train, y_train[var])
         y_pred = reg.predict(X_test)
         
         # Add results to dataframe
@@ -299,12 +299,12 @@ def random_forest_regression(X_train, X_test, y_train, y_test, variables):
 
 def xgb_regression(X_train, X_test, y_train, y_test, variables): 
     # Initialize dataframes
-    df_score = pd.DataFrame(index=['random forest regression'], columns=[variables])
-    df_mse = pd.DataFrame(index=['random forest regression'], columns=[variables])
+    df_score = pd.DataFrame(index=['XGBoost regeression'], columns=[variables])
+    df_mse = pd.DataFrame(index=['XGBoost regeression'], columns=[variables])
     
     for var in variables:
         # Run regression for each variable
-        reg = XGBRegressor(n_estimators=500, max_depth=3, eta=0.01, subsample=0.75, colsample_bytree=0.75, random_state=0).fit(X_train, y_train[var])
+        reg = XGBRegressor(n_estimators=500, max_depth=2, eta=0.01, subsample=1, colsample_bytree=1, random_state=0).fit(X_train, y_train[var])
         y_pred = reg.predict(X_test)
         
         # Add results to dataframe
@@ -315,8 +315,8 @@ def xgb_regression(X_train, X_test, y_train, y_test, variables):
 
 def logit_regression(X_train, X_test, y_train, y_test, variables):
     # Initialize dataframes
-    df_score = pd.DataFrame(index=['random forest regression'], columns=[variables])
-    df_mse = pd.DataFrame(index=['random forest regression'], columns=[variables])
+    df_score = pd.DataFrame(index=['logistic regression'], columns=[variables])
+    df_mse = pd.DataFrame(index=['logistic regression'], columns=[variables])
     reports = []
     
     for var in variables:
@@ -376,11 +376,13 @@ xbt = normalize_cols(xbt)
 eth = normalize_cols(eth)
 bch = normalize_cols(bch)
 
+# Set names for dataframes
+xbt.name = 'xbt'
+eth.name = 'eth'
+bch.name = 'bch'
 
-# PREDICTIONS
-
+# Make predictions
 # Get X columns from file
-
 file3 = 'x_values.xlsx'
 sheet = 'X_indicators'
 x_columns = pd.read_excel(file3, sheet_name=sheet, header=None)
@@ -389,29 +391,42 @@ x_columns = x_columns[0].tolist()
 # Get y columns
 y_columns = [col for col in xbt.columns if col[:2]=='y_']
 
-# Get X and y (NOTE: here only xbt, add others later)
-X = xbt[x_columns][:-1]
-y = xbt[y_columns][:-1]
+# Loop for all dataframes, and add results to master dataframes
+scores = pd.DataFrame()
+mses = pd.DataFrame()
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
+for df in [xbt, eth, bch]:
+    # Get X and y values
+    X = df[x_columns][:-1]
+    y = df[y_columns][:-1]
+    
+    # Split data into train and test (validation set)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
+    
+    # Separate boolean regressions
+    vars1 = y.columns.to_list()[0:2] + y.columns.to_list()[4:]
+    vars2 = y.columns.to_list()[2:4]
 
-vars1 = y.columns.to_list()[0:2] + y.columns.to_list()[4:]
-vars2 = y.columns.to_list()[2:4]
+    # Run regressions
+    lr_score, lr_mse = linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+    la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+    rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+    xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+    lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2)
+
+    # Concatenate values
+    score = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
+    mse = pd.concat([lr_mse, la_mse, rf_mse, xgb_mse, lt_mse])
+    score.index = [df.name+" "+i for i in score.index]
+    mse.index = [df.name+" "+i for i in mse.index]
+    
+    scores = pd.concat([scores, score])
+    mses = pd.concat([mses, mse])
 
 
 
-lr_score, lr_mse = linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2)
 
-scores = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
-mses = pd.concat([lr_mse, la_mse, rf_mse, xgb_mse, lt_mse])
-
-
-
-# TODO: divide before linear/lasso regression by mean?
+# TODO: divide before linear/lasso/logistic regression by mean? StandardScaler
 # TODO: hyperparameter tuning (some), wrapper methods for selected models & final hyperparameter tunings
 
 
