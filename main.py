@@ -7,12 +7,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LogisticRegression, LinearRegression, LassoCV
-from sklearn.preprocessing import minmax_scale
 from matplotlib import rc_file_defaults as plotdefaults
 from sklearn.metrics import mean_squared_error
 from xgboost import XGBRegressor
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
+from sklearn.preprocessing import PowerTransformer, StandardScaler
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
@@ -186,18 +186,20 @@ def normalize_cols(df):
 
     """
     
+    # Instantiate transformers
+    pt = PowerTransformer()
+    ss = StandardScaler()
+    
     # Create lists for features in each transformation group
-    logs = ['mean_bidSize', 'mean_askSize', 'BidSizeSMA', 'AskSizeSMA']
-    logs_1plus = ['std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'last_size', 'mean_size', 'std_price']
-    norms = ['MicroPriceAdjustment', 'BidPriceSMA_s', 'AskPriceSMA_s', 'BidPriceSMA_l', 'AskPriceSMA_l']
+    power_tf = ['mean_bidSize', 'mean_askSize', 'BidSizeSMA', 'AskSizeSMA', 'last_bidSize', 'last_askSize', 'std_bidSize', 'std_askSize', 'buys', 'buyVolume', 'sells', 'sellVolume', 'last_size', 'mean_size', 'std_price']
+    std_tf = ['MicroPriceAdjustment', 'BidPriceSMA_s', 'AskPriceSMA_s', 'BidPriceSMA_l', 'AskPriceSMA_l', 'RelativeSpread','BuyPressure', 'RelativeBuys']
     
     # Transform features
-    df[logs] = df[logs].applymap(lambda x: np.log(x))
-    df[logs_1plus] = df[logs_1plus].applymap(lambda x: np.log(1+x))
-    df[norms] = df[norms].apply(lambda x: (x-x.mean())/x.std())
+    df[power_tf] = pt.fit_transform(df[power_tf])
     df['RelativeSpread'] = pd.qcut(df['RelativeSpread'], q=[0,.10,.5,.90,1], labels=False) # bins
+    df[std_tf] = ss.fit_transform(df[std_tf])
     
-    # Returned transformed df
+    # Return transformed df
     return df
 
 def heatmap(df):
@@ -321,7 +323,7 @@ def logit_regression(X_train, X_test, y_train, y_test, variables):
     
     for var in variables:
         # Run regression for each variable
-        reg = LogisticRegression(random_state=0, class_weight='balanced').fit(X_train, y_train[var])
+        reg = LogisticRegression(random_state=0, class_weight='balanced', max_iter=10).fit(X_train, y_train[var])
         y_pred = reg.predict(X_test)
         probabilities = reg.predict_proba(X_test)[:,1]
         
@@ -395,7 +397,8 @@ y_columns = [col for col in xbt.columns if col[:2]=='y_']
 scores = pd.DataFrame()
 mses = pd.DataFrame()
 
-for df in [xbt, eth, bch]:
+# for df in [xbt, eth, bch]:
+for df in [xbt, eth, bch]: # TODO: insert all dfs to loop when ready with testing
     # Get X and y values
     X = df[x_columns][:-1]
     y = df[y_columns][:-1]
@@ -412,7 +415,7 @@ for df in [xbt, eth, bch]:
     la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
     rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
     xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-    lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2)
+    lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2) # TODO: figure out why no convergence
 
     # Concatenate values
     score = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
@@ -424,43 +427,5 @@ for df in [xbt, eth, bch]:
     mses = pd.concat([mses, mse])
 
 
-
-
-# TODO: divide before linear/lasso/logistic regression by mean? StandardScaler
-# TODO: hyperparameter tuning (some), wrapper methods for selected models & final hyperparameter tunings
-
-
-# HISTOGRAMS
-
-# for i, col in enumerate(bch.columns):
-#     if i > 1:
-#         plt.figure(i)
-#         plt.hist(np.log(bch[col].dropna()+1), bins=30)
-#         plt.title("log_"+col)
-#         plt.show()
-
-# plt.figure()
-# plt.hist((bch['MicroPriceAdjustment']-bch['MicroPriceAdjustment'].mean())/np.std(bch['MicroPriceAdjustment']), bins=30)
-# plt.title('MicroPriceAdjustement')
-# plt.show()   
-
-# a = 'BidPriceSMA_l'
-# plt.hist(xbt[a], bins=100)
-# plt.show()
-
-# plt.hist(np.log(xbt[a]), bins=100)
-# plt.show()
-
-# pd.qcut(xbt[a], q=[0,.10,.5,.90,1]).value_counts()
-
-# Linear Regression
-
-# Predict change in last best bid price with the micro price adjustment
-
-# y = bch['last_bidPrice']
-# y = (y.shift(1) - y)[1:]
-# x = bch['MicroPriceAdjustment'][1:]
-# x[x.between(-0.05,0.05)] = 0
-# x = sm.add_constant(x, has_constant='add')
-# model = sm.OLS(y,x).fit()
-# model.summary()
+# TODO: wrapper methods / feature importances for selected models
+# TODO: final hyperparameter tunings
