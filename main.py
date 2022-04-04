@@ -226,6 +226,26 @@ def heatmap(df):
     plt.show()
     plotdefaults()
     
+def histograms(df, cols):
+    """
+    Histograms of df[cols]
+
+    Parameters
+    ----------
+    df : pd df
+    cols : list
+
+    Returns
+    -------
+    None.
+
+    """
+    for i, col in enumerate(df[cols]):
+        plt.figure(i)
+        plt.hist(eth[col], bins=30)
+        plt.title(col)
+        plt.show()
+    
 def add_vars(df):
     # Calculate micro price adjustments
     df = micro_price_adjustment(df)
@@ -397,8 +417,7 @@ y_columns = [col for col in xbt.columns if col[:2]=='y_']
 scores = pd.DataFrame()
 mses = pd.DataFrame()
 
-# for df in [xbt, eth, bch]:
-for df in [xbt, eth, bch]: # TODO: insert all dfs to loop when ready with testing
+for df in [xbt, eth, bch]: # TODO: make sure to include all dfs to loop when ready with testing
     # Get X and y values
     X = df[x_columns][:-1]
     y = df[y_columns][:-1]
@@ -415,7 +434,7 @@ for df in [xbt, eth, bch]: # TODO: insert all dfs to loop when ready with testin
     la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
     rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
     xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-    lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2) # TODO: figure out why no convergence
+    lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2) # TODO: figure out why not converging
 
     # Concatenate values
     score = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
@@ -427,5 +446,9 @@ for df in [xbt, eth, bch]: # TODO: insert all dfs to loop when ready with testin
     mses = pd.concat([mses, mse])
 
 
-# TODO: wrapper methods / feature importances for selected models
-# TODO: final hyperparameter tunings
+# TODO: wrapper methods / feature importances for selected models (wrapper for linreg, figure out best ways for xgb and logit, target: 5-10 dep. vars)
+# TODO: Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
+# TODO: final hyperparameter tunings (consider cross validation, grid search? Utilize sklearn pipelines&tools)
+# TODO: load completely new data and run models on that data, analyze&reflect results, show plots(?)
+
+histograms(eth, x_columns)
