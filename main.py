@@ -9,10 +9,12 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LogisticRegression, LinearRegression, LassoCV
 from matplotlib import rc_file_defaults as plotdefaults
 from sklearn.metrics import mean_squared_error
-from xgboost import XGBRegressor
+from xgboost import XGBRegressor, plot_importance
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.preprocessing import PowerTransformer, StandardScaler
+from sklearn.inspection import permutation_importance
+import shap
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
@@ -354,6 +356,26 @@ def logit_regression(X_train, X_test, y_train, y_test, variables):
     
     return df_score, df_mse, reports
 
+def xgb_importances(X, y):
+    # Run regression
+    model = XGBRegressor(n_estimators=500, max_depth=2, eta=0.01, subsample=1, colsample_bytree=1, random_state=0).fit(X, y)
+    
+    # Standard feature importance
+    plot_importance(model, title=f'Feature importance: {y.name}')
+    # list(zip(X.columns, model.feature_importances_))
+    
+    # Permutation importance
+    perm_imp = permutation_importance(model, X, y)
+    sorted_idx = abs(perm_imp.importances_mean).argsort()
+    plt.barh(X.columns[sorted_idx], abs(perm_imp.importances_mean[sorted_idx]))
+    
+    # SHAP (Shapley values from game theory) importances
+    explainer = shap.Explainer(model)
+    shap_values = explainer(X)
+    shap.plots.beeswarm(shap_values)
+    shap.plots.bar(shap_values)
+    
+    return True
 
 # Read files
 file1 = '../quote_20220318.csv'
@@ -445,6 +467,42 @@ for df in [xbt, eth, bch]:
     scores = pd.concat([scores, score])
     mses = pd.concat([mses, mse])
 
+# Based on above results, we choose the following models for y values
+xgb_ylist = ['y_bidSize', 'y_askSize', 'y_sells', 'y_buys']
+linear_ylist = ['y_changeBidPrice', 'y_changeAskPrice']
+logit_ylist = ['y_bidTickDown', 'y_askTickUp']
+
+# Draw importance graphs
+for df in [xbt, eth, bch]:
+    X = df[x_columns][:-1]
+    y = df[y_columns][:-1]
+    
+    for col in xgb_ylist:
+        xgb_importances(X, y[col])
+    
+    # for col in linear_ylist:
+    #     linear_importances(X, y[col])
+    
+    # for col in logit_ylist:
+    #     logit_importances(X, y[col])
+
+
+# Based on previous results, we choose the following features
+# y_bidSize
+features_y4 = ['last_bidSize', 'BidSizeSMA', 'MicroPriceAdjustment', 'BuyPressure', 'last_askSize']
+
+# y_askSize
+features_y5 = ['last_askSize', 'AskSizeSMA', 'BuyPressure', 'last_bidSize', 'AskPriceSMA_l']
+
+# y_sells
+features_y6 = ['sells', 'sellVolume', 'BidPriceSMA_l', 'mean_bidSize', 'last_askSize']
+
+# y_buys
+features_y7 = ['buys', 'buyVolume', 'last_askSize', 'BidPriceSMA_s', 'RelativeSpread']
+
+
+
+
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
 # TODO: Figuring out why logit regression is so slow
 # TODO: Wrapper methods / feature importances for selected models (wrapper for linreg, figure out best ways for xgb and logit, target: 5-10 dep. vars)
@@ -452,4 +510,7 @@ for df in [xbt, eth, bch]:
 # TODO: Final hyperparameter tunings (consider cross validation, grid search? Utilize sklearn pipelines&tools)
 # TODO: Load completely new data and run models on that data, analyze&reflect results, show plots(?)
 
-histograms(eth, x_columns)
+
+
+
+# histograms(eth, x_columns)
