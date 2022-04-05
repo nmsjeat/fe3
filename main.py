@@ -495,12 +495,10 @@ features_y4 = ['last_bidSize', 'BidSizeSMA', 'MicroPriceAdjustment', 'BuyPressur
 features_y5 = ['last_askSize', 'AskSizeSMA', 'BuyPressure', 'last_bidSize', 'AskPriceSMA_l']
 
 # y_sells
-features_y6 = ['sells', 'sellVolume', 'BidPriceSMA_l', 'mean_bidSize', 'last_askSize']
+features_y6 = ['sells', 'BidPriceSMA_l', 'mean_bidSize', 'last_askSize', 'BidSizeSMA']
 
 # y_buys
-features_y7 = ['buys', 'buyVolume', 'last_askSize', 'BidPriceSMA_s', 'RelativeSpread']
-
-
+features_y7 = ['buys', 'last_askSize', 'BidPriceSMA_s', 'RelativeSpread', 'std_askSize']
 
 
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
