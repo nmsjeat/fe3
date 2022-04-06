@@ -380,13 +380,19 @@ def xgb_importances(X, y):
 # Read files
 file1 = '../quote_20220318.csv'
 file2 = '../trade_20220318.csv'
+file3 = '../quote_20220320.csv'
+file4 = '../trade_20220320.csv'
 
 quote = pd.read_csv(file1, sep=',', index_col=0)
 trade = pd.read_csv(file2, sep=',', index_col=0)
+test_quote = pd.read_csv(file3, sep=',', index_col=0)
+test_trade = pd.read_csv(file4, sep=',', index_col=0)
 
 # Set datetime index
 quote.index = pd.to_datetime(quote.index, format="%Y-%m-%dD%H:%M:%S.%f")
 trade.index = pd.to_datetime(trade.index, format="%Y-%m-%dD%H:%M:%S.%f")
+test_quote.index = pd.to_datetime(test_quote.index, format="%Y-%m-%dD%H:%M:%S.%f")
+test_trade.index = pd.to_datetime(test_trade.index, format="%Y-%m-%dD%H:%M:%S.%f")
 
 # Separate into three dataframes based on crypto
 xbt_quote = quote[quote['symbol'] == 'XBTUSD']
@@ -397,6 +403,14 @@ xbt_trade = trade[trade['symbol'] == 'XBTUSD']
 eth_trade = trade[trade['symbol'] == 'ETHUSD']
 bch_trade = trade[trade['symbol'] == 'BCHUSD']
 
+test_xbt_quote = test_quote[test_quote['symbol'] == 'XBTUSD']
+test_eth_quote = test_quote[test_quote['symbol'] == 'ETHUSD']
+test_bch_quote = test_quote[test_quote['symbol'] == 'BCHUSD']
+
+test_xbt_trade = test_trade[test_trade['symbol'] == 'XBTUSD']
+test_eth_trade = test_trade[test_trade['symbol'] == 'ETHUSD']
+test_bch_trade = test_trade[test_trade['symbol'] == 'BCHUSD']
+
 # Resample data into (1s) intervals
 ival = '1s'
 
@@ -405,25 +419,45 @@ xbt = resample_df(xbt_quote, xbt_trade, ival)
 eth = resample_df(eth_quote, eth_trade, ival)
 bch = resample_df(bch_quote, bch_trade, ival)
 
+test_xbt = resample_df(test_xbt_quote, test_xbt_trade, ival)
+test_eth = resample_df(test_eth_quote, test_eth_trade, ival)
+test_bch = resample_df(test_bch_quote, test_bch_trade, ival)
+
 # Add relevant variables
 xbt = add_vars(xbt)
 eth = add_vars(eth)
 bch = add_vars(bch)
+
+test_xbt = add_vars(test_xbt)
+test_eth = add_vars(test_eth)
+test_bch = add_vars(test_bch)
 
 # Clean column values
 xbt = clean_columns(xbt)
 eth = clean_columns(eth)
 bch = clean_columns(bch)
 
+test_xbt = clean_columns(test_xbt)
+test_eth = clean_columns(test_eth)
+test_bch = clean_columns(test_bch)
+
 # Normalize columns
 xbt = normalize_cols(xbt)
 eth = normalize_cols(eth)
 bch = normalize_cols(bch)
 
+test_xbt = normalize_cols(test_xbt)
+test_eth = normalize_cols(test_eth)
+test_bch = normalize_cols(test_bch)
+
 # Set names for dataframes
 xbt.name = 'xbt'
 eth.name = 'eth'
 bch.name = 'bch'
+
+test_xbt.name = 'test_xbt'
+test_eth.name = 'test_eth'
+test_bch.name = 'test_bch'
 
 # Make predictions
 # Get X columns from file
@@ -503,10 +537,10 @@ features_y7 = ['buys', 'last_askSize', 'BidPriceSMA_s', 'RelativeSpread', 'std_a
 
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
 # TODO: Figuring out why logit regression is so slow
-# TODO: Wrapper methods / feature importances for selected models (wrapper for linreg, figure out best ways for xgb and logit, target: 5-10 dep. vars)
+# TODO: Wrapper methods / feature importances for selected models (wrapper for linreg, figure out best ways for logit, target: 5-10 dep. vars)
 # TODO: Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
 # TODO: Final hyperparameter tunings (consider cross validation, grid search? Utilize sklearn pipelines&tools)
-# TODO: Load completely new data and run models on that data, analyze&reflect results, show plots(?)
+# TODO: Run models on fully new data, analyze&reflect results, show plots(?)
 
 
 
