@@ -649,6 +649,22 @@ params_y7 = pd.Series(data=[1,500,2,0.01,1], index=params_index)
 xgb_params = [params_y4, params_y5, params_y6, params_y7]
 
 
+# Train final models
+X0_train = xbt[xgb_features['y_bidSize']][:-1]
+X0_test = test_xbt[xgb_features['y_bidSize']][:-1]
+y0_train = xbt['y_bidSize'][:-1]
+y0_test = test_xbt['y_bidSize'][:-1]
+
+reg0 = XGBRegressor(n_estimators=int(xgb_params[0]['n_estimators']), max_depth=int(xgb_params[0]['max_depth']), eta=xgb_params[0]['eta'], subsample=xgb_params[0]['subsample'], colsample_bytree=xgb_params[0]['colsample_bytree'], random_state=0)
+reg0 = reg0.fit(X0_train, y0_train)
+pred0 = reg0.predict(X0_test)
+pred0 = [i if i>100 else 100 for i in pred0]
+
+reg0.score(X0_train, y0_train)
+reg0.score(X0_test, y0_test)
+mean_squared_error(y0_test, pred0)
+
+plt.scatter(y0_test, pred0, alpha=0.1)
 
 
 
