@@ -521,39 +521,42 @@ y_columns = [col for col in xbt.columns if col[:2]=='y_']
 scores = pd.DataFrame()
 mses = pd.DataFrame()
 
-# for df in [xbt, eth, bch]:
-#     # Get X and y values
-#     X = df[x_columns][:-1]
-#     y = df[y_columns][:-1]
+"""
+for df in [xbt, eth, bch]:
+    # Get X and y values
+    X = df[x_columns][:-1]
+    y = df[y_columns][:-1]
     
-#     # Split data into train and test (validation set)
-#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
+    # Split data into train and test (validation set)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
     
-#     # Separate boolean regressions
-#     vars1 = y.columns.to_list()[0:2] + y.columns.to_list()[4:]
-#     vars2 = y.columns.to_list()[2:4]
+    # Separate boolean regressions
+    vars1 = y.columns.to_list()[0:2] + y.columns.to_list()[4:]
+    vars2 = y.columns.to_list()[2:4]
 
-#     # Run regressions
-#     lr_score, lr_mse = linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-#     la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-#     rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-#     xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-#     lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2)
+    # Run regressions
+    lr_score, lr_mse = linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+    la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+    rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+    xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+    lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2)
 
-#     # Concatenate values
-#     score = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
-#     mse = pd.concat([lr_mse, la_mse, rf_mse, xgb_mse, lt_mse])
-#     score.index = [df.name+" "+i for i in score.index]
-#     mse.index = [df.name+" "+i for i in mse.index]
+    # Concatenate values
+    score = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
+    mse = pd.concat([lr_mse, la_mse, rf_mse, xgb_mse, lt_mse])
+    score.index = [df.name+" "+i for i in score.index]
+    mse.index = [df.name+" "+i for i in mse.index]
     
-#     scores = pd.concat([scores, score])
-#     mses = pd.concat([mses, mse])
+    scores = pd.concat([scores, score])
+    mses = pd.concat([mses, mse])
+"""
 
 # Based on above results, we choose the following models for y values
 xgb_ylist = ['y_bidSize', 'y_askSize', 'y_sells', 'y_buys']
 linear_ylist = ['y_changeBidPrice', 'y_changeAskPrice']
 logit_ylist = ['y_bidTickDown', 'y_askTickUp']
 
+"""
 # Draw importance graphs for xgb, importance selection done manually due to differences in approaches
 # Can be commented out
 for col in xgb_ylist:
@@ -588,20 +591,20 @@ for col in logit_ylist:
         logistic_feat_list.extend(linlog_importances(X, y[col], df.name, method='logistic'))
     
     logistic_selection.append([i[0] for i in Counter(logistic_feat_list).most_common(7)])
-
+"""
 
 # Based on previous results, we choose the following features
 # y_changeBidPrice
-features_y0 = linear_selection[0]
+features_y0 = ['last_bidSize', 'last_askSize', 'last_side', 'RelativeSpread', 'mean_bidSize'] #linear_selection[0]
 
 # y_changeAskPrice
-features_y1 = linear_selection[1]
+features_y1 = ['last_bidSize', 'last_askSize', 'last_side', 'BuyPressure', 'mean_bidSize'] #linear_selection[1]
 
 # y_bidTickDown, NOTE: deleted 90%+ correlated features
-features_y2 = [i for i in logistic_selection[0] if i not in ['buyVolume', 'BidPriceSMA_s']]
+features_y2 = ['buys', 'std_price', 'AskPriceSMA_s', 'SalesDummy', 'last_side'] #[i for i in logistic_selection[0] if i not in ['buyVolume', 'BidPriceSMA_s']]
 
 # y_askTickUp, NOTE: deleted 90%+ correlated features
-features_y3 = [i for i in logistic_selection[1] if i not in ['AskPriceSMA_s', 'sellVolume']]
+features_y3 = ['std_price', 'BidPriceSMA_s', 'sells', 'buys', 'last_size'] #[i for i in logistic_selection[1] if i not in ['AskPriceSMA_s', 'sellVolume']]
 
 # y_bidSize
 features_y4 = ['last_bidSize', 'BidSizeSMA', 'MicroPriceAdjustment', 'BuyPressure', 'last_askSize']
@@ -617,23 +620,25 @@ features_y7 = ['buys', 'last_askSize', 'BidPriceSMA_s', 'RelativeSpread', 'std_a
 
 xgb_features = {'y_bidSize':features_y4, 'y_askSize':features_y5, 'y_sells':features_y6, 'y_buys':features_y7}
 
+"""
 # Parameter tuning for xgb-based models
-# Can be commented if using manual input below
-# best_params = []
-# for col in xgb_ylist:
-#     best_df = pd.DataFrame()
+Can be commented if using manual input below
+best_params = []
+for col in xgb_ylist:
+    best_df = pd.DataFrame()
     
-#     for df in [xbt, eth, bch]:
-#         X = df[xgb_features[col]][:-1]
-#         y = df[y_columns][:-1]
+    for df in [xbt, eth, bch]:
+        X = df[xgb_features[col]][:-1]
+        y = df[y_columns][:-1]
         
-#         best = xgb_tuning(X, y[col], niter=30)
-#         print(best)
+        best = xgb_tuning(X, y[col], niter=30)
+        print(best)
         
-#         b = pd.DataFrame(best.items()).set_index(0)
-#         best_df = best_df.merge(b, how='outer', left_index=True, right_index=True)
+        b = pd.DataFrame(best.items()).set_index(0)
+        best_df = best_df.merge(b, how='outer', left_index=True, right_index=True)
     
-#     best_params.append(best_df.transpose().median())
+    best_params.append(best_df.transpose().median())
+"""
 
 # Manual input, avoid excessive runtime
 params_index = ['subsample', 'n_estimators', 'max_depth', 'eta', 'colsample_bytree']
@@ -647,9 +652,9 @@ xgb_params = [params_y4, params_y5, params_y6, params_y7]
 
 
 
+
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
 # TODO: Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
-# TODO: Final hyperparameter tunings (consider cross validation, grid search? Utilize sklearn pipelines&tools)
 # TODO: Run models on fully new data, analyze&reflect results, show plots(?)
 
 
