@@ -18,6 +18,7 @@ import shap
 from warnings import simplefilter
 from sklearn.feature_selection import SequentialFeatureSelector
 from collections import Counter
+from sklearn.model_selection import RandomizedSearchCV
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
@@ -402,6 +403,25 @@ def linlog_importances(X, y, weight, method):
     l = sfs.get_feature_names_out().tolist() * weights[weight]
     return l
 
+def xgb_tuning(X, y, niter=10):
+    # Define parameters to be tested
+    params = {
+        'n_estimators':[100,250,500],
+        'max_depth':[2,3,4],
+        'eta':[0.01,0.05,0.1,0.2],
+        'subsample':[0.8,1.0],
+        'colsample_bytree':[0.8,1.0]
+        }
+    
+    # Base regression
+    reg = XGBRegressor(n_estimators=100, max_depth=2, eta=0.01, subsample=0.6, colsample_bytree=0.6)
+    
+    # Randomized tuning search
+    rscv = RandomizedSearchCV(reg, params, n_iter=niter)
+    rscv.fit(X, y)
+    
+    return rscv.best_params_
+
 # Ignore all future warnings
 simplefilter(action='ignore', category=FutureWarning)
 
@@ -595,13 +615,39 @@ features_y6 = ['sells', 'BidPriceSMA_l', 'mean_bidSize', 'last_askSize', 'BidSiz
 # y_buys
 features_y7 = ['buys', 'last_askSize', 'BidPriceSMA_s', 'RelativeSpread', 'std_askSize']
 
+xgb_features = {'y_bidSize':features_y4, 'y_askSize':features_y5, 'y_sells':features_y6, 'y_buys':features_y7}
+
+# Parameter tuning for xgb-based models
+# Can be commented if using manual input below
+# best_params = []
+# for col in xgb_ylist:
+#     best_df = pd.DataFrame()
+    
+#     for df in [xbt, eth, bch]:
+#         X = df[xgb_features[col]][:-1]
+#         y = df[y_columns][:-1]
+        
+#         best = xgb_tuning(X, y[col], niter=30)
+#         print(best)
+        
+#         b = pd.DataFrame(best.items()).set_index(0)
+#         best_df = best_df.merge(b, how='outer', left_index=True, right_index=True)
+    
+#     best_params.append(best_df.transpose().median())
+
+# Manual input, avoid excessive runtime
+params_index = ['subsample', 'n_estimators', 'max_depth', 'eta', 'colsample_bytree']
+params_y4 = pd.Series(data=[0.8,250,2,0.05,0.8], index=params_index)
+params_y5 = pd.Series(data=[1,250,3,0.01,1], index=params_index)
+params_y6 = pd.Series(data=[0.8,100,3,0.05,1], index=params_index)
+params_y7 = pd.Series(data=[1,500,2,0.01,1], index=params_index)
+xgb_params = [params_y4, params_y5, params_y6, params_y7]
+
 
 
 
 
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
-# TODO: Figuring out why logit regression is so slow
-# TODO: Wrapper methods / feature importances for selected models (wrapper for linreg, figure out best ways for logit, target: 5-10 dep. vars)
 # TODO: Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
 # TODO: Final hyperparameter tunings (consider cross validation, grid search? Utilize sklearn pipelines&tools)
 # TODO: Run models on fully new data, analyze&reflect results, show plots(?)
