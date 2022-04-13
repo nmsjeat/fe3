@@ -15,6 +15,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.preprocessing import PowerTransformer, StandardScaler
 from sklearn.inspection import permutation_importance
 import shap
+from warnings import simplefilter
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
@@ -361,21 +362,31 @@ def xgb_importances(X, y):
     model = XGBRegressor(n_estimators=500, max_depth=2, eta=0.01, subsample=1, colsample_bytree=1, random_state=0).fit(X, y)
     
     # Standard feature importance
+    plt.figure(1)
     plot_importance(model, title=f'Feature importance: {y.name}')
     # list(zip(X.columns, model.feature_importances_))
+    plt.show()
     
     # Permutation importance
+    plt.figure(2)
     perm_imp = permutation_importance(model, X, y)
     sorted_idx = abs(perm_imp.importances_mean).argsort()
     plt.barh(X.columns[sorted_idx], abs(perm_imp.importances_mean[sorted_idx]))
+    plt.show()
     
     # SHAP (Shapley values from game theory) importances
+    plt.figure(3)
     explainer = shap.Explainer(model)
     shap_values = explainer(X)
     shap.plots.beeswarm(shap_values)
     shap.plots.bar(shap_values)
+    plt.show()
     
     return True
+
+
+# Ignore all future warnings
+simplefilter(action='ignore', category=FutureWarning)
 
 # Read files
 file1 = '../quote_20220318.csv'
@@ -473,33 +484,33 @@ y_columns = [col for col in xbt.columns if col[:2]=='y_']
 scores = pd.DataFrame()
 mses = pd.DataFrame()
 
-for df in [xbt, eth, bch]:
-    # Get X and y values
-    X = df[x_columns][:-1]
-    y = df[y_columns][:-1]
+# for df in [xbt, eth, bch]:
+#     # Get X and y values
+#     X = df[x_columns][:-1]
+#     y = df[y_columns][:-1]
     
-    # Split data into train and test (validation set)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
+#     # Split data into train and test (validation set)
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, shuffle=False)
     
-    # Separate boolean regressions
-    vars1 = y.columns.to_list()[0:2] + y.columns.to_list()[4:]
-    vars2 = y.columns.to_list()[2:4]
+#     # Separate boolean regressions
+#     vars1 = y.columns.to_list()[0:2] + y.columns.to_list()[4:]
+#     vars2 = y.columns.to_list()[2:4]
 
-    # Run regressions
-    lr_score, lr_mse = linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-    la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-    rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-    xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
-    lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2)
+#     # Run regressions
+#     lr_score, lr_mse = linear_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+#     la_score, la_mse = lasso_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+#     rf_score, rf_mse = random_forest_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+#     xgb_score, xgb_mse = xgb_regression(X_train, X_test, y_train[vars1], y_test[vars1], vars1)
+#     lt_score, lt_mse, lt_reports = logit_regression(X_train, X_test, y_train[vars2], y_test[vars2], vars2)
 
-    # Concatenate values
-    score = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
-    mse = pd.concat([lr_mse, la_mse, rf_mse, xgb_mse, lt_mse])
-    score.index = [df.name+" "+i for i in score.index]
-    mse.index = [df.name+" "+i for i in mse.index]
+#     # Concatenate values
+#     score = pd.concat([lr_score, la_score, rf_score, xgb_score, lt_score])
+#     mse = pd.concat([lr_mse, la_mse, rf_mse, xgb_mse, lt_mse])
+#     score.index = [df.name+" "+i for i in score.index]
+#     mse.index = [df.name+" "+i for i in mse.index]
     
-    scores = pd.concat([scores, score])
-    mses = pd.concat([mses, mse])
+#     scores = pd.concat([scores, score])
+#     mses = pd.concat([mses, mse])
 
 # Based on above results, we choose the following models for y values
 xgb_ylist = ['y_bidSize', 'y_askSize', 'y_sells', 'y_buys']
