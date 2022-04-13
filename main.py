@@ -16,6 +16,8 @@ from sklearn.preprocessing import PowerTransformer, StandardScaler
 from sklearn.inspection import permutation_importance
 import shap
 from warnings import simplefilter
+from sklearn.feature_selection import SequentialFeatureSelector
+from collections import Counter
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
@@ -384,6 +386,21 @@ def xgb_importances(X, y):
     
     return True
 
+def linlog_importances(X, y, weight, method):
+    weights = {'xbt':2, 'eth':2, 'bch':1}
+    
+    # Run regression
+    if method == 'linear':
+        reg = LinearRegression().fit(X, y)
+    elif method == 'logistic':
+        reg = LogisticRegression(random_state=0, class_weight='balanced', max_iter=100).fit(X, y)
+        
+    # Use forward selection
+    sfs = SequentialFeatureSelector(reg, n_features_to_select=5)
+    sfs.fit(X, y)
+    
+    l = sfs.get_feature_names_out().tolist() * weights[weight]
+    return l
 
 # Ignore all future warnings
 simplefilter(action='ignore', category=FutureWarning)
@@ -517,22 +534,55 @@ xgb_ylist = ['y_bidSize', 'y_askSize', 'y_sells', 'y_buys']
 linear_ylist = ['y_changeBidPrice', 'y_changeAskPrice']
 logit_ylist = ['y_bidTickDown', 'y_askTickUp']
 
-# Draw importance graphs
-for df in [xbt, eth, bch]:
-    X = df[x_columns][:-1]
-    y = df[y_columns][:-1]
-    
-    for col in xgb_ylist:
+# Draw importance graphs for xgb, importance selection done manually due to differences in approaches
+# Can be commented out
+for col in xgb_ylist:
+    for df in [xbt, eth, bch]:
+        X = df[x_columns][:-1]
+        y = df[y_columns][:-1]
+        
         xgb_importances(X, y[col])
+
+# Find most important features with forward selection
+linear_selection = []
+for col in linear_ylist:
+    linear_feat_list = []
     
-    # for col in linear_ylist:
-    #     linear_importances(X, y[col])
+    for df in [xbt, eth, bch]:
+        X = df[x_columns][:-1]
+        y = df[y_columns][:-1]
+        
+        linear_feat_list.extend(linlog_importances(X, y[col], df.name, method='linear'))
     
-    # for col in logit_ylist:
-    #     logit_importances(X, y[col])
+    linear_selection.append([i[0] for i in Counter(linear_feat_list).most_common(5)])
+
+# Find most important features with forward selection
+logistic_selection = []
+for col in logit_ylist:
+    logistic_feat_list = []
+    
+    for df in [xbt, eth, bch]:
+        X = df[x_columns][:-1]
+        y = df[y_columns][:-1]
+        
+        logistic_feat_list.extend(linlog_importances(X, y[col], df.name, method='logistic'))
+    
+    logistic_selection.append([i[0] for i in Counter(logistic_feat_list).most_common(7)])
 
 
 # Based on previous results, we choose the following features
+# y_changeBidPrice
+features_y0 = linear_selection[0]
+
+# y_changeAskPrice
+features_y1 = linear_selection[1]
+
+# y_bidTickDown, NOTE: deleted 90%+ correlated features
+features_y2 = [i for i in logistic_selection[0] if i not in ['buyVolume', 'BidPriceSMA_s']]
+
+# y_askTickUp, NOTE: deleted 90%+ correlated features
+features_y3 = [i for i in logistic_selection[1] if i not in ['AskPriceSMA_s', 'sellVolume']]
+
 # y_bidSize
 features_y4 = ['last_bidSize', 'BidSizeSMA', 'MicroPriceAdjustment', 'BuyPressure', 'last_askSize']
 
@@ -544,6 +594,9 @@ features_y6 = ['sells', 'BidPriceSMA_l', 'mean_bidSize', 'last_askSize', 'BidSiz
 
 # y_buys
 features_y7 = ['buys', 'last_askSize', 'BidPriceSMA_s', 'RelativeSpread', 'std_askSize']
+
+
+
 
 
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
