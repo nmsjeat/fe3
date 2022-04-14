@@ -556,9 +556,10 @@ xgb_ylist = ['y_bidSize', 'y_askSize', 'y_sells', 'y_buys']
 linear_ylist = ['y_changeBidPrice', 'y_changeAskPrice']
 logit_ylist = ['y_bidTickDown', 'y_askTickUp']
 
-"""
+
 # Draw importance graphs for xgb, importance selection done manually due to differences in approaches
 # Can be commented out
+"""
 for col in xgb_ylist:
     for df in [xbt, eth, bch]:
         X = df[x_columns][:-1]
@@ -667,13 +668,12 @@ mean_squared_error(y0_test, pred0)
 plt.scatter(y0_test, pred0, alpha=0.1)
 
 
-
-
-# TODO: Finding out out whether we should use probabilities or predictions in logit MSE
-# TODO: Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
+# TODO: PRIO! Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
+# TODO: PRIO! For each y, fit on full train data (18.3.2022), predict on new test data (20.3.2022), calculate scores and errors. Make manual adjustments for silly values 
+# TODO: PRIO! For classification (logistic regression), do classification report and confusion matrix
 # TODO: Run models on fully new data, analyze&reflect results, show plots(?)
-
-
-
+# TODO: Finding out out whether we should use probabilities or predictions in logit MSE
+# TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
+# TODO: See if reducing variables from 5 significantly worsens results
 
 # histograms(eth, x_columns)
