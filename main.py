@@ -665,7 +665,9 @@ reg0.score(X0_train, y0_train)
 reg0.score(X0_test, y0_test)
 mean_squared_error(y0_test, pred0)
 
+plt.figure(0)
 plt.scatter(y0_test, pred0, alpha=0.1)
+plt.show()
 
 
 # TODO: PRIO! Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
