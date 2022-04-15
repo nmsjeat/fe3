@@ -19,6 +19,7 @@ from warnings import simplefilter
 from sklearn.feature_selection import SequentialFeatureSelector
 from collections import Counter
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import plot_confusion_matrix
 
 def resample_df(df_quote, df_trade, ival='1s'):
     """
@@ -652,8 +653,12 @@ params_y6 = pd.Series(data=[0.8,100,3,0.05,1], index=params_index)
 params_y7 = pd.Series(data=[1,500,2,0.01,1], index=params_index)
 xgb_params = [params_y4, params_y5, params_y6, params_y7]
 
-
 # Train final models
+
+dfs = [xbt, eth, bch] # All assets
+all_ylist = xgb_ylist + linear_ylist + logit_ylist # All dependent vars
+final_features = {**lin_reg_features, **logit_reg_features, **xgb_features} # Dict of selected independent vars for each dependent var
+xgb_map = {'y_bidSize':xgb_params[0], 'y_askSize':xgb_params[1], 'y_sells':xgb_params[2], 'y_buys':xgb_params[3]} # map of var to hyperparameters
 
 def final_models():
     """
@@ -664,10 +669,6 @@ def final_models():
     results : resulting dataframe
 
     """
-    dfs = [xbt, eth, bch] # All assets
-    all_ylist = xgb_ylist + linear_ylist + logit_ylist # All dependent vars
-    final_features = {**lin_reg_features, **logit_reg_features, **xgb_features} # Dict of selected independent vars for each dependent var
-    xgb_map = {'y_bidSize':xgb_params[0], 'y_askSize':xgb_params[1], 'y_sells':xgb_params[2], 'y_buys':xgb_params[3]} # map of var to hyperparameters
     
     # results dataframe
     results = pd.DataFrame(columns=['Variable', 'Asset', 'Model', 'Train R^2', 'Test R^2', 'Train MSE', 'Test MSE'])
@@ -705,12 +706,12 @@ def final_models():
                 model_name = 'XG Boost'
                 reg = XGBRegressor(n_estimators=int(xgb_map[y]['n_estimators']), max_depth=int(xgb_map[y]['max_depth']), eta=xgb_map[y]['eta'], subsample=xgb_map[y]['subsample'], colsample_bytree=xgb_map[y]['colsample_bytree'], random_state=0)
                 reg = reg.fit(X_train, y_train)
-                y_pred_train = reg.predict(X_test)
+                train_score = reg.score(X_train, y_train)
+                test_score = reg.score(X_test, y_test)
+                y_pred_train = reg.predict(X_train)
                 y_pred_test = reg.predict(X_test)
                 y_pred_train = [i if i>100 else 100 for i in y_pred_train]
                 y_pred_test = [i if i>100 else 100 for i in y_pred_test]
-                train_score = reg.score(X_train, y_train)
-                test_score = reg.score(X_test, y_test)
                 mse_train = mean_squared_error(y_train, y_pred_train)
                 mse_test = mean_squared_error(y_test, y_pred_test)
                 
@@ -720,8 +721,42 @@ def final_models():
     # Return results
     return results
 
-final_models = final_models()
-final_models.to_excel("final_models.xlsx")
+final_results = final_models()
+final_results.to_excel("final_results.xlsx")
+
+# Plot confusion matrices for logistic regression
+def plot_confusion_matrices():
+
+    clfs = []
+    dfs = [xbt, eth, bch]
+    title_map = {}
+    for df in dfs:
+        for y in logit_ylist:
+            X_train = df[final_features[y]].head(-1)
+            X_test = eval('test_'+df.name)[final_features[y]].head(-1)
+            y_train = df[y].head(-1)
+            y_test = eval('test_'+df.name)[y].head(-1)
+            clf = LogisticRegression(random_state=0, class_weight='balanced', max_iter=30).fit(X_train, y_train)
+            clfs.append(clf)
+            title_map[id(clf)] = f'{y} ({df.name})'
+
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(10,10))
+    for clf, ax in zip(clfs, axes.flatten()):
+        print(clf, ax)
+        plot_confusion_matrix(clf, 
+                              X_test, 
+                              y_test, 
+                              ax=ax,
+                              normalize='true',
+                              cmap='Blues')
+        ax.title.set_text(title_map[id(clf)])
+    plt.tight_layout()  
+    plt.show()      
+
+plot_confusion_matrices()     
+            
+
+
 
 
 """
@@ -746,7 +781,7 @@ plt.show()
 
 # TODO: PRIO! Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
 # TODO: PRIO! Assess whether adjustments for silly values should be made when predicting with final models, e.g., if some model predicts negative values for positive variables etc.
-# TODO: PRIO! For classification (logistic regression), do classification report and confusion matrix
+# TODO: PRIO! Classification report for logistic regression (?) If needed beyond confusion matrices
 # TODO: Run models on fully new data, analyze&reflect results, show plots(?)
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
 # TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
