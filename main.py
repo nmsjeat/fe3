@@ -653,13 +653,13 @@ params_y6 = pd.Series(data=[0.8,100,3,0.05,1], index=params_index)
 params_y7 = pd.Series(data=[1,500,2,0.01,1], index=params_index)
 xgb_params = [params_y4, params_y5, params_y6, params_y7]
 
-# Train final models
-
+# Define variables for loops
 dfs = [xbt, eth, bch] # All assets
 all_ylist = xgb_ylist + linear_ylist + logit_ylist # All dependent vars
 final_features = {**lin_reg_features, **logit_reg_features, **xgb_features} # Dict of selected independent vars for each dependent var
 xgb_map = {'y_bidSize':xgb_params[0], 'y_askSize':xgb_params[1], 'y_sells':xgb_params[2], 'y_buys':xgb_params[3]} # map of var to hyperparameters
 
+# Train final models
 def final_models():
     """
     Fits final model for all dependent variables
@@ -750,14 +750,12 @@ def plot_confusion_matrices():
                               normalize='true',
                               cmap='Blues')
         ax.title.set_text(title_map[id(clf)])
-    plt.tight_layout()  
+    plt.tight_layout()
+    plt.savefig('conf_mat.png')
     plt.show()      
 
 plot_confusion_matrices()     
             
-
-
-
 
 """
 X0_train = xbt[xgb_features['y_bidSize']][:-1]
