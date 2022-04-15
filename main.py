@@ -619,7 +619,10 @@ features_y6 = ['sells', 'BidPriceSMA_l', 'mean_bidSize', 'last_askSize', 'BidSiz
 # y_buys
 features_y7 = ['buys', 'last_askSize', 'BidPriceSMA_s', 'RelativeSpread', 'std_askSize']
 
+lin_reg_features = {'y_changeBidPrice': features_y0, 'y_changeAskPrice': features_y1}
+logit_reg_features = {'y_bidTickDown': features_y2, 'y_askTickUp': features_y3}
 xgb_features = {'y_bidSize':features_y4, 'y_askSize':features_y5, 'y_sells':features_y6, 'y_buys':features_y7}
+
 
 """
 # Parameter tuning for xgb-based models
@@ -651,6 +654,79 @@ xgb_params = [params_y4, params_y5, params_y6, params_y7]
 
 
 # Train final models
+
+def final_models():
+    """
+    Fits final model for all dependent variables
+
+    Returns
+    -------
+    results : resulting dataframe
+
+    """
+    dfs = [xbt, eth, bch] # All assets
+    all_ylist = xgb_ylist + linear_ylist + logit_ylist # All dependent vars
+    final_features = {**lin_reg_features, **logit_reg_features, **xgb_features} # Dict of selected independent vars for each dependent var
+    xgb_map = {'y_bidSize':xgb_params[0], 'y_askSize':xgb_params[1], 'y_sells':xgb_params[2], 'y_buys':xgb_params[3]} # map of var to hyperparameters
+    
+    # results dataframe
+    results = pd.DataFrame(columns=['Variable', 'Asset', 'Model', 'Train R^2', 'Test R^2', 'Train MSE', 'Test MSE'])
+    
+    # Iterate over assets
+    for df in dfs:
+        # Iterate over dependent vars
+        for y in all_ylist:
+            # Do train-test split
+            X_train = df[final_features[y]].head(-1)
+            X_test = eval('test_'+df.name)[final_features[y]].head(-1)
+            y_train = df[y].head(-1)
+            y_test = eval('test_'+df.name)[y].head(-1)
+            
+            # Fit model depending on group
+            if y in linear_ylist:
+                model_name = 'Linar Regression'
+                reg = LinearRegression().fit(X_train, y_train)
+                train_score = reg.score(X_train, y_train)
+                test_score = reg.score(X_test, y_test)
+                y_pred_train = reg.predict(X_train)
+                y_pred_test = reg.predict(X_test)
+                mse_train = mean_squared_error(y_train, y_pred_train)
+                mse_test = mean_squared_error(y_test, y_pred_test)
+            elif y in logit_ylist:
+                model_name = 'Logistic Regression'
+                reg = LogisticRegression(random_state=0, class_weight='balanced', max_iter=30).fit(X_train, y_train)
+                train_score = reg.score(X_train, y_train)
+                test_score = reg.score(X_test, y_test)
+                y_pred_train = reg.predict(X_train)
+                y_pred_test = reg.predict(X_test)
+                mse_train = mean_squared_error(y_train, y_pred_train)
+                mse_test = mean_squared_error(y_test, y_pred_test)
+            else:
+                model_name = 'XG Boost'
+                reg = XGBRegressor(n_estimators=int(xgb_map[y]['n_estimators']), max_depth=int(xgb_map[y]['max_depth']), eta=xgb_map[y]['eta'], subsample=xgb_map[y]['subsample'], colsample_bytree=xgb_map[y]['colsample_bytree'], random_state=0)
+                reg = reg.fit(X_train, y_train)
+                y_pred_train = reg.predict(X_test)
+                y_pred_test = reg.predict(X_test)
+                y_pred_train = [i if i>100 else 100 for i in y_pred_train]
+                y_pred_test = [i if i>100 else 100 for i in y_pred_test]
+                train_score = reg.score(X_train, y_train)
+                test_score = reg.score(X_test, y_test)
+                y_pred_train = reg.predict(X_train)
+                y_pred_test = reg.predict(X_test)
+                mse_train = mean_squared_error(y_train, y_pred_train)
+                mse_test = mean_squared_error(y_test, y_pred_test)
+                
+            # Append diagnostics to results
+            results = results.append({'Variable': y, 'Asset': df.name, 'Model': model_name, 'Train R^2': train_score, 'Test R^2': test_score, 'Train MSE': mse_train, 'Test MSE': mse_test}, ignore_index=True)
+    
+    # Return results
+    return results
+
+final_models = final_models()
+final_models.to_excel("final_models.xlsx")
+
+
+"""
 X0_train = xbt[xgb_features['y_bidSize']][:-1]
 X0_test = test_xbt[xgb_features['y_bidSize']][:-1]
 y0_train = xbt['y_bidSize'][:-1]
@@ -668,10 +744,10 @@ mean_squared_error(y0_test, pred0)
 plt.figure(0)
 plt.scatter(y0_test, pred0, alpha=0.1)
 plt.show()
-
+"""
 
 # TODO: PRIO! Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
-# TODO: PRIO! For each y, fit on full train data (18.3.2022), predict on new test data (20.3.2022), calculate scores and errors. Make manual adjustments for silly values 
+# TODO: PRIO! Assess whether adjustments for silly values should be done in final models, e.g., some model predicts negative values for positive variables
 # TODO: PRIO! For classification (logistic regression), do classification report and confusion matrix
 # TODO: Run models on fully new data, analyze&reflect results, show plots(?)
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
