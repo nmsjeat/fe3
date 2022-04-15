@@ -684,7 +684,7 @@ def final_models():
             
             # Fit model depending on group
             if y in linear_ylist:
-                model_name = 'Linar Regression'
+                model_name = 'Linear Regression'
                 reg = LinearRegression().fit(X_train, y_train)
                 train_score = reg.score(X_train, y_train)
                 test_score = reg.score(X_test, y_test)
@@ -711,8 +711,6 @@ def final_models():
                 y_pred_test = [i if i>100 else 100 for i in y_pred_test]
                 train_score = reg.score(X_train, y_train)
                 test_score = reg.score(X_test, y_test)
-                y_pred_train = reg.predict(X_train)
-                y_pred_test = reg.predict(X_test)
                 mse_train = mean_squared_error(y_train, y_pred_train)
                 mse_test = mean_squared_error(y_test, y_pred_test)
                 
@@ -747,7 +745,7 @@ plt.show()
 """
 
 # TODO: PRIO! Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
-# TODO: PRIO! Assess whether adjustments for silly values should be done in final models, e.g., some model predicts negative values for positive variables
+# TODO: PRIO! Assess whether adjustments for silly values should be made when predicting with final models, e.g., if some model predicts negative values for positive variables etc.
 # TODO: PRIO! For classification (logistic regression), do classification report and confusion matrix
 # TODO: Run models on fully new data, analyze&reflect results, show plots(?)
 # TODO: Finding out out whether we should use probabilities or predictions in logit MSE
