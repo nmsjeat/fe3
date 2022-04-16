@@ -793,22 +793,36 @@ def plot_correlation_matrix(df):
 for df in dfs:
     plot_correlation_matrix(df)
     
-def plot_transformation(df, feats):
+
+def plot_standardization_results(df, feats):
+    """
+    Plots before and after standardization subplots for feats
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+    feats : list
+
+    Returns
+    -------
+    None.
+
+    """
     before = eval(f'test_{df.name}')
     after = df
-    f = plt.figure(figsize=(12,10))
-    f.suptitle("Raw vs. Standardized")
-    
+    fig, axes = plt.subplots(3, 2, figsize=(12,12))
     for i, feat in enumerate(feats):
-        f.add_subplot(3,2,i+1)
-        sns.distplot(before[feat])
-        f.add_subplot(3,2,i+2)
-        sns.histplot(after[feat])
-        #axes[i].set_title(f'Raw Data ({feat}')
-        #axes[i+2].set_title(f'Transformed ({feat}')
-        
-features = ['last_askSize', 'last_bidSize', 'buys']
-plot_transformation(xbt, features)
+        sns.distplot(before[feat], ax=axes[i,0])
+        sns.distplot(after[feat], ax=axes[i,1])
+        axes[i,0].set_title(f'Raw Data ({feat})')
+        axes[i,1].set_title(f'Standardized ({feat})')
+    fig.suptitle("Features Before and After Standardization", fontsize=16)
+    fig.tight_layout()
+    plt.savefig("standardization_results")
+
+# Plot standardization result for bidSize related features         
+features = ['last_bidSize', 'mean_bidSize', 'BidSizeSMA']
+plot_standardization_results(xbt, features)
         
     
     
@@ -836,12 +850,9 @@ plt.scatter(y0_test, pred0, alpha=0.1)
 plt.show()
 """
 
-# TODO: PRIO! Bivariate Plots to see dependecies (pairs scatterplots with kde plots, similarly as in exercises)
 # TODO: PRIO! Assess whether adjustments for silly values should be made when predicting with final models, e.g., if some model predicts negative values for positive variables etc.
 # TODO: PRIO! Classification report for logistic regression (?) If needed beyond confusion matrices
-# TODO: Run models on fully new data, analyze&reflect results, show plots(?)
-# TODO: Finding out out whether we should use probabilities or predictions in logit MSE
 # TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
-# TODO: See if reducing variables from 5 significantly worsens results
+# TODO: If time, See if reducing variables from 5 significantly worsens results
 
 # histograms(eth, x_columns)
