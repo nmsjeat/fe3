@@ -754,8 +754,32 @@ def plot_confusion_matrices():
     plt.savefig('conf_mat.png')
     plt.show()      
 
-plot_confusion_matrices()     
-            
+plot_confusion_matrices()
+
+def plot_correlation_matrix(df):
+    """
+    Generates heatmap of correlations between features of given df and saves the resulting figure
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+
+    Returns
+    -------
+    None.
+
+    """
+    corr = df[x_columns].corr() # compute feature correlations
+    plt.figure(figsize = (19,14))
+    sns.heatmap(corr, cmap=sns.color_palette("viridis", as_cmap=True), annot=True, annot_kws={"size": 10}, fmt='.2f')
+    plt.title(f'Heatmap of Feature Correlations ({df.name})', fontsize=18)
+    plt.xticks(rotation=90) # set rotation of features on x axis 
+    plt.savefig(f'corr_heatmap_{df.name}.png')
+    
+plot_correlation_matrix(xbt)
+plot_correlation_matrix(eth)
+plot_correlation_matrix(bch)
+
 
 """
 X0_train = xbt[xgb_features['y_bidSize']][:-1]
