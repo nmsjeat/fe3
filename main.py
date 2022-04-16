@@ -721,11 +721,21 @@ def final_models():
     # Return results
     return results
 
+# Compute final results and export to Excel
 final_results = final_models()
 final_results.to_excel("final_results.xlsx")
 
-# Plot confusion matrices for logistic regression
+
 def plot_confusion_matrices():
+    """
+    Generates a plot of confusion matrices for logistic regression classifiers
+    Saves the resulting figure
+
+    Returns
+    -------
+    None.
+
+    """
 
     clfs = []
     dfs = [xbt, eth, bch]
@@ -754,6 +764,7 @@ def plot_confusion_matrices():
     plt.savefig('conf_mat.png')
     plt.show()      
 
+# Plot confusion matrices for classifiers
 plot_confusion_matrices()
 
 def plot_correlation_matrix(df):
@@ -775,10 +786,14 @@ def plot_correlation_matrix(df):
     plt.title(f'Heatmap of Feature Correlations ({df.name})', fontsize=18)
     plt.xticks(rotation=90) # set rotation of features on x axis 
     plt.savefig(f'corr_heatmap_{df.name}.png')
+
+# Generate feature correlation heatmaps for all assets
+for df in dfs:
+    plot_correlation_matrix(df)
     
-plot_correlation_matrix(xbt)
-plot_correlation_matrix(eth)
-plot_correlation_matrix(bch)
+
+
+
 
 
 """
