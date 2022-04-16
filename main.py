@@ -495,9 +495,11 @@ xbt = normalize_cols(xbt)
 eth = normalize_cols(eth)
 bch = normalize_cols(bch)
 
+"""
 test_xbt = normalize_cols(test_xbt)
 test_eth = normalize_cols(test_eth)
 test_bch = normalize_cols(test_bch)
+"""
 
 # Set names for dataframes
 xbt.name = 'xbt'
@@ -791,8 +793,26 @@ def plot_correlation_matrix(df):
 for df in dfs:
     plot_correlation_matrix(df)
     
-
-
+def plot_transformation(df, feats):
+    before = eval(f'test_{df.name}')
+    after = df
+    f = plt.figure(figsize=(12,10))
+    f.suptitle("Raw vs. Standardized")
+    
+    for i, feat in enumerate(feats):
+        f.add_subplot(3,2,i+1)
+        sns.distplot(before[feat])
+        f.add_subplot(3,2,i+2)
+        sns.histplot(after[feat])
+        #axes[i].set_title(f'Raw Data ({feat}')
+        #axes[i+2].set_title(f'Transformed ({feat}')
+        
+features = ['last_askSize', 'last_bidSize', 'buys']
+plot_transformation(xbt, features)
+        
+    
+    
+    
 
 
 
