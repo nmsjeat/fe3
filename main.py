@@ -711,8 +711,12 @@ def final_models():
                 test_score = reg.score(X_test, y_test)
                 y_pred_train = reg.predict(X_train)
                 y_pred_test = reg.predict(X_test)
-                y_pred_train = [i if i>100 else 100 for i in y_pred_train]
-                y_pred_test = [i if i>100 else 100 for i in y_pred_test]
+                if y in ['y_bidSize', 'y_askSize']:
+                    y_pred_train = [i if i>100 else 100 for i in y_pred_train]
+                    y_pred_test = [i if i>100 else 100 for i in y_pred_test]
+                else: # sells or buys, which cannot be negative
+                    y_pred_train = [i if i>=0 else 0 for i in y_pred_train]
+                    y_pred_test = [i if i>=0 else 0 for i in y_pred_test]
                 mse_train = mean_squared_error(y_train, y_pred_train)
                 mse_test = mean_squared_error(y_test, y_pred_test)
                 
@@ -725,6 +729,17 @@ def final_models():
 # Compute final results and export to Excel
 final_results = final_models()
 final_results.to_excel("final_results.xlsx")
+
+# Try linear regression for one of xbt y variables
+X_train = xbt[final_features['y_changeBidPrice']].head(-1)
+X_test = test_xbt[final_features['y_changeBidPrice']].head(-1)
+y_train = xbt['y_changeBidPrice'].head(-1)
+y_test = test_xbt['y_changeBidPrice'].head(-1)
+reg = LinearRegression().fit(X_train, y_train)
+y_pred_test = reg.predict(X_test)
+y_pred_test = pd.DataFrame(y_pred_test)
+y_pred_test.describe()
+
 
 def make_classification_report(df, y):
     """
@@ -747,7 +762,8 @@ def make_classification_report(df, y):
     y_pred = reg.predict(X_test)
     # Return resulting classification report
     return classification_report(y_test, y_pred)
-    
+ 
+# Print classification report for all classifiers   
 for df in dfs:
     for y in logit_ylist:
         print(make_classification_report(df, y))
@@ -887,6 +903,5 @@ plt.savefig('xbt_feature_pairplot')
 plt.show()
 
 
-# TODO: PRIO! Assess whether adjustments for silly values should be made when predicting with final models, e.g., if some model predicts negative values for positive variables etc.
 # TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
 # TODO: If time, See if reducing variables from 5 significantly worsens results
