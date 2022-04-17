@@ -852,15 +852,41 @@ plot_standardization_results(xbt, features)
         
 
 def plot_pairs(sample_size=100):
+    """
+    Generates pairwise scatter plots for features in linear regression models
+    Uses a random sample of the features to avoid excessive computing time
+
+    Parameters
+    ----------
+    sample_size : int
+        Size of the random sample that is drawn from the df. The default is 100.
+
+    Returns
+    -------
+    None.
+
+    """
     for df in dfs:    
         for y in linear_ylist:
             sample_df = df[final_features[y]].sample(sample_size, axis=0)
             g = sns.pairplot(sample_df, diag_kind="kde")
             g.map_lower(sns.kdeplot, levels=4, color=".2")
             g.fig.suptitle(f'{df.name}: {y}', fontsize=16)
+            plt.tight_layout()
             plt.show()
-        
+ 
+# Plot pairwise scatter plots for all features used in linear regression models
 plot_pairs()
+
+# Individually chosen example plot from plot_pairs function
+feature_df = xbt[final_features['y_changeAskPrice']].sample(1000, axis=0)
+g = sns.pairplot(feature_df, diag_kind="kde")
+g.map_lower(sns.kdeplot, levels=4, color=".2")
+g.fig.suptitle('xbt: y_changeAskPrice', fontsize=16)
+plt.tight_layout()
+plt.savefig('xbt_feature_pairplot')
+plt.show()
+
 
 """
 X0_train = xbt[xgb_features['y_bidSize']][:-1]
