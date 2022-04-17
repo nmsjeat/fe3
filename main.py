@@ -352,8 +352,7 @@ def logit_regression(X_train, X_test, y_train, y_test, variables):
         # Run regression for each variable
         reg = LogisticRegression(random_state=0, class_weight='balanced', max_iter=10).fit(X_train, y_train[var])
         y_pred = reg.predict(X_test)
-        probabilities = reg.predict_proba(X_test)[:,1]
-        
+        # probabilities = reg.predict_proba(X_test)[:,1]
         # Add results to dataframe
         df_score[var] = reg.score(X_test, y_test[var])
         df_mse[var] = mean_squared_error(y_test[var], y_pred) # TODO: Niko, käykö järkeen käyttää y_pred vai probabilities?
@@ -888,28 +887,6 @@ plt.savefig('xbt_feature_pairplot')
 plt.show()
 
 
-"""
-X0_train = xbt[xgb_features['y_bidSize']][:-1]
-X0_test = test_xbt[xgb_features['y_bidSize']][:-1]
-y0_train = xbt['y_bidSize'][:-1]
-y0_test = test_xbt['y_bidSize'][:-1]
-
-reg0 = XGBRegressor(n_estimators=int(xgb_params[0]['n_estimators']), max_depth=int(xgb_params[0]['max_depth']), eta=xgb_params[0]['eta'], subsample=xgb_params[0]['subsample'], colsample_bytree=xgb_params[0]['colsample_bytree'], random_state=0)
-reg0 = reg0.fit(X0_train, y0_train)
-pred0 = reg0.predict(X0_test)
-pred0 = [i if i>100 else 100 for i in pred0]
-
-reg0.score(X0_train, y0_train)
-reg0.score(X0_test, y0_test)
-mean_squared_error(y0_test, pred0)
-
-plt.figure(0)
-plt.scatter(y0_test, pred0, alpha=0.1)
-plt.show()
-"""
-
 # TODO: PRIO! Assess whether adjustments for silly values should be made when predicting with final models, e.g., if some model predicts negative values for positive variables etc.
 # TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
 # TODO: If time, See if reducing variables from 5 significantly worsens results
-
-# histograms(eth, x_columns)
