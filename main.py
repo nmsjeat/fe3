@@ -727,6 +727,32 @@ def final_models():
 final_results = final_models()
 final_results.to_excel("final_results.xlsx")
 
+def make_classification_report(df, y):
+    """
+    Fits logistic regression variable y in dataframe df 
+
+    Returns
+    -------
+    classification report of predictions
+
+    """
+    
+    # Do train-test split
+    X_train = df[final_features[y]].head(-1)
+    X_test = eval('test_'+df.name)[final_features[y]].head(-1)
+    y_train = df[y].head(-1)
+    y_test = eval('test_'+df.name)[y].head(-1)
+    # Fit model
+    reg = LogisticRegression(random_state=0, class_weight='balanced', max_iter=30).fit(X_train, y_train)
+    # Predict
+    y_pred = reg.predict(X_test)
+    # Return resulting classification report
+    return classification_report(y_test, y_pred)
+    
+for df in dfs:
+    for y in logit_ylist:
+        print(make_classification_report(df, y))
+
 
 def plot_confusion_matrices():
     """
@@ -739,9 +765,9 @@ def plot_confusion_matrices():
 
     """
 
-    clfs = []
-    dfs = [xbt, eth, bch]
-    title_map = {}
+    clfs = [] # buffer for classifiers
+    dfs = [xbt, eth, bch] # df container
+    title_map = {} # dict map for subplot headers
     for df in dfs:
         for y in logit_ylist:
             X_train = df[final_features[y]].head(-1)
@@ -824,11 +850,17 @@ def plot_standardization_results(df, feats):
 features = ['last_bidSize', 'mean_bidSize', 'BidSizeSMA']
 plot_standardization_results(xbt, features)
         
-    
-    
-    
 
-
+def plot_pairs(sample_size=100):
+    for df in dfs:    
+        for y in linear_ylist:
+            sample_df = df[final_features[y]].sample(sample_size, axis=0)
+            g = sns.pairplot(sample_df, diag_kind="kde")
+            g.map_lower(sns.kdeplot, levels=4, color=".2")
+            g.fig.suptitle(f'{df.name}: {y}', fontsize=16)
+            plt.show()
+        
+plot_pairs()
 
 """
 X0_train = xbt[xgb_features['y_bidSize']][:-1]
@@ -851,7 +883,6 @@ plt.show()
 """
 
 # TODO: PRIO! Assess whether adjustments for silly values should be made when predicting with final models, e.g., if some model predicts negative values for positive variables etc.
-# TODO: PRIO! Classification report for logistic regression (?) If needed beyond confusion matrices
 # TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
 # TODO: If time, See if reducing variables from 5 significantly worsens results
 
