@@ -730,15 +730,18 @@ def final_models():
 final_results = final_models()
 final_results.to_excel("final_results.xlsx")
 
-# Try linear regression for one of xbt y variables
-X_train = xbt[final_features['y_changeBidPrice']].head(-1)
-X_test = test_xbt[final_features['y_changeBidPrice']].head(-1)
-y_train = xbt['y_changeBidPrice'].head(-1)
-y_test = test_xbt['y_changeBidPrice'].head(-1)
-reg = LinearRegression().fit(X_train, y_train)
-y_pred_test = reg.predict(X_test)
-y_pred_test = pd.DataFrame(y_pred_test)
-y_pred_test.describe()
+def describe_predictions(df, y, model='linear'):
+    if model == 'linear':
+        X_train = df[final_features[y]].head(-1)
+        X_test = eval(f'test_{df.name}')[final_features[y]].head(-1)
+        y_train = df[y].head(-1)
+        reg = LinearRegression().fit(X_train, y_train)
+        y_pred_test = reg.predict(X_test)
+        y_pred_test = pd.DataFrame(y_pred_test)
+        print(y_pred_test.describe())
+
+describe_predictions(df=xbt, y='y_changeBidPrice')
+
 
 
 def make_classification_report(df, y):
