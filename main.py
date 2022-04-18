@@ -494,11 +494,14 @@ xbt = normalize_cols(xbt)
 eth = normalize_cols(eth)
 bch = normalize_cols(bch)
 
-"""
+# Store dataframes before normalization
+test_xbt_raw = test_xbt.copy()
+test_eth_raw = test_eth.copy()
+test_bch_raw = test_bch.copy()
+
 test_xbt = normalize_cols(test_xbt)
 test_eth = normalize_cols(test_eth)
 test_bch = normalize_cols(test_bch)
-"""
 
 # Set names for dataframes
 xbt.name = 'xbt'
@@ -743,7 +746,6 @@ def describe_predictions(df, y, model='linear'):
 describe_predictions(df=xbt, y='y_changeBidPrice')
 
 
-
 def make_classification_report(df, y):
     """
     Fits logistic regression variable y in dataframe df 
@@ -852,7 +854,7 @@ def plot_standardization_results(df, feats):
     None.
 
     """
-    before = eval(f'test_{df.name}')
+    before = eval(f'test_{df.name}_raw')
     after = df
     fig, axes = plt.subplots(3, 2, figsize=(12,12))
     for i, feat in enumerate(feats):
