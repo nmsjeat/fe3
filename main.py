@@ -554,6 +554,10 @@ for df in [xbt, eth, bch]:
     
     scores = pd.concat([scores, score])
     mses = pd.concat([mses, mse])
+
+with pd.ExcelWriter('model selection scores mses.xlsx') as writer:
+    scores.to_excel(writer, sheet_name='score')
+    mses.to_excel(writer, sheet_name='MSE')
 """
 
 # Based on above results, we choose the following models for y values
