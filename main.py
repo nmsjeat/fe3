@@ -850,7 +850,7 @@ def plot_correlation_matrix(df):
     """
     corr = df[x_columns].corr() # compute feature correlations
     plt.figure(figsize = (19,14))
-    sns.heatmap(corr, cmap=sns.color_palette("viridis", as_cmap=True), annot=True, annot_kws={"size": 10}, fmt='.2f')
+    sns.heatmap(corr, cmap=sns.color_palette("vlag", as_cmap=True), annot=True, annot_kws={"size": 10}, fmt='.2f')
     plt.title(f'Heatmap of Feature Correlations ({df.name})', fontsize=18)
     plt.xticks(rotation=90) # set rotation of features on x axis 
     plt.savefig(f'corr_heatmap_{df.name}.png')
