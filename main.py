@@ -734,8 +734,9 @@ def final_models():
     return results
 
 # Compute final results and export to Excel
+
 final_results = final_models()
-final_results.to_excel("final_results.xlsx")
+# final_results.to_excel("final_results.xlsx")
 
 def describe_predictions(df, y, model='linear'):
     if model == 'linear':
@@ -747,10 +748,10 @@ def describe_predictions(df, y, model='linear'):
         y_pred_test = pd.DataFrame(y_pred_test)
         print(y_pred_test.describe())
 
-describe_predictions(df=xbt, y='y_changeBidPrice')
+# Describe_predictions(df=xbt, y='y_changeBidPrice')
 
 
-def make_classification_report(df, y):
+def make_classification_report(df, y, as_dict=False):
     """
     Fits logistic regression variable y in dataframe df 
 
@@ -759,7 +760,7 @@ def make_classification_report(df, y):
     classification report of predictions
 
     """
-    
+    global final_features
     # Do train-test split
     X_train = df[final_features[y]].head(-1)
     X_test = eval('test_'+df.name)[final_features[y]].head(-1)
@@ -770,12 +771,26 @@ def make_classification_report(df, y):
     # Predict
     y_pred = reg.predict(X_test)
     # Return resulting classification report
-    return classification_report(y_test, y_pred)
+    return classification_report(y_test, y_pred) if not as_dict else classification_report(y_test, y_pred, output_dict=True)
  
-# Print classification report for all classifiers   
-for df in dfs:
-    for y in logit_ylist:
-        print(make_classification_report(df, y))
+
+# Export classification report for all classifiers   
+
+xbt_report_1 = pd.DataFrame(make_classification_report(xbt, 'y_askTickUp', as_dict=True)).transpose()
+xbt_report_2 = pd.DataFrame(make_classification_report(xbt, 'y_bidTickDown', as_dict=True)).transpose()
+eth_report_1 = pd.DataFrame(make_classification_report(eth, 'y_askTickUp', as_dict=True)).transpose()
+eth_report_2 = pd.DataFrame(make_classification_report(eth, 'y_bidTickDown', as_dict=True)).transpose()
+bch_report_1 = pd.DataFrame(make_classification_report(bch, 'y_askTickUp', as_dict=True)).transpose()
+bch_report_2 = pd.DataFrame(make_classification_report(bch, 'y_bidTickDown', as_dict=True)).transpose()
+
+
+xbt_report_1.to_excel('ClassificationReports/xbt_report_1.xlsx')
+xbt_report_2.to_excel('ClassificationReports/xbt_report_2.xlsx')
+eth_report_1.to_excel('ClassificationReports/eth_report_1.xlsx')
+eth_report_2.to_excel('ClassificationReports/eth_report_2.xlsx')
+bch_report_1.to_excel('ClassificationReports/bch_report_1.xlsx')
+bch_report_2.to_excel('ClassificationReports/bch_report_2.xlsx')
+
 
 
 def plot_confusion_matrices():
@@ -817,7 +832,7 @@ def plot_confusion_matrices():
     plt.show()      
 
 # Plot confusion matrices for classifiers
-plot_confusion_matrices()
+# plot_confusion_matrices()
 
 def plot_correlation_matrix(df):
     """
@@ -840,9 +855,10 @@ def plot_correlation_matrix(df):
     plt.savefig(f'corr_heatmap_{df.name}.png')
 
 # Generate feature correlation heatmaps for all assets
+"""
 for df in dfs:
     plot_correlation_matrix(df)
-    
+"""  
 
 def plot_standardization_results(df, feats):
     """
@@ -871,9 +887,10 @@ def plot_standardization_results(df, feats):
     plt.savefig("standardization_results")
 
 # Plot standardization result for bidSize related features         
+"""
 features = ['last_bidSize', 'mean_bidSize', 'BidSizeSMA']
 plot_standardization_results(xbt, features)
-        
+"""      
 
 def plot_pairs(sample_size=100):
     """
@@ -900,9 +917,10 @@ def plot_pairs(sample_size=100):
             plt.show()
  
 # Plot pairwise scatter plots for all features used in linear regression models
-plot_pairs()
+# plot_pairs()
 
 # Individually chosen example plot from plot_pairs function
+"""
 feature_df = xbt[final_features['y_changeAskPrice']].sample(1000, axis=0)
 g = sns.pairplot(feature_df, diag_kind="kde")
 g.map_lower(sns.kdeplot, levels=4, color=".2")
@@ -910,7 +928,7 @@ g.fig.suptitle('xbt: y_changeAskPrice', fontsize=16)
 plt.tight_layout()
 plt.savefig('xbt_feature_pairplot')
 plt.show()
-
+"""
 
 # TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
 # TODO: If time, See if reducing variables from 5 significantly worsens results
