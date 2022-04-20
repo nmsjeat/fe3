@@ -776,13 +776,14 @@ def make_classification_report(df, y, as_dict=False):
 
 # Export classification report for all classifiers   
 
+print(make_classification_report(xbt, 'y_askTickUp'))
+
 xbt_report_1 = pd.DataFrame(make_classification_report(xbt, 'y_askTickUp', as_dict=True)).transpose()
 xbt_report_2 = pd.DataFrame(make_classification_report(xbt, 'y_bidTickDown', as_dict=True)).transpose()
 eth_report_1 = pd.DataFrame(make_classification_report(eth, 'y_askTickUp', as_dict=True)).transpose()
 eth_report_2 = pd.DataFrame(make_classification_report(eth, 'y_bidTickDown', as_dict=True)).transpose()
 bch_report_1 = pd.DataFrame(make_classification_report(bch, 'y_askTickUp', as_dict=True)).transpose()
 bch_report_2 = pd.DataFrame(make_classification_report(bch, 'y_bidTickDown', as_dict=True)).transpose()
-
 
 xbt_report_1.to_excel('ClassificationReports/xbt_report_1.xlsx')
 xbt_report_2.to_excel('ClassificationReports/xbt_report_2.xlsx')
