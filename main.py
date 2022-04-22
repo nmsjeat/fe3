@@ -853,7 +853,7 @@ def plot_correlation_matrix(df):
     sns.heatmap(corr, cmap=sns.color_palette("vlag", as_cmap=True), annot=True, annot_kws={"size": 10}, fmt='.2f')
     plt.title(f'Heatmap of Feature Correlations ({df.name})', fontsize=18)
     plt.xticks(rotation=90) # set rotation of features on x axis 
-    plt.savefig(f'Heatmaps/corr_heatmap_{df.name}.png')
+    plt.savefig(f'Figures/corr_heatmap_{df.name}.png')
 
 # Generate feature correlation heatmaps for all assets
 
