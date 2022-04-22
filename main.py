@@ -853,13 +853,12 @@ def plot_correlation_matrix(df):
     sns.heatmap(corr, cmap=sns.color_palette("vlag", as_cmap=True), annot=True, annot_kws={"size": 10}, fmt='.2f')
     plt.title(f'Heatmap of Feature Correlations ({df.name})', fontsize=18)
     plt.xticks(rotation=90) # set rotation of features on x axis 
-    plt.savefig(f'corr_heatmap_{df.name}.png')
+    plt.savefig(f'Heatmaps/corr_heatmap_{df.name}.png')
 
 # Generate feature correlation heatmaps for all assets
-"""
+
 for df in dfs:
     plot_correlation_matrix(df)
-"""  
 
 def plot_standardization_results(df, feats):
     """
@@ -921,15 +920,13 @@ def plot_pairs(sample_size=100):
 # plot_pairs()
 
 # Individually chosen example plot from plot_pairs function
-"""
 feature_df = xbt[final_features['y_changeAskPrice']].sample(1000, axis=0)
-g = sns.pairplot(feature_df, diag_kind="kde")
+g = sns.pairplot(feature_df, diag_kind="kde", height=12)
 g.map_lower(sns.kdeplot, levels=4, color=".2")
 g.fig.suptitle('xbt: y_changeAskPrice', fontsize=16)
 plt.tight_layout()
 plt.savefig('xbt_feature_pairplot')
 plt.show()
-"""
 
 # TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
 # TODO: If time, See if reducing variables from 5 significantly worsens results
