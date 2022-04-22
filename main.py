@@ -921,11 +921,11 @@ def plot_pairs(sample_size=100):
 
 # Individually chosen example plot from plot_pairs function
 feature_df = xbt[final_features['y_changeAskPrice']].sample(1000, axis=0)
-g = sns.pairplot(feature_df, diag_kind="kde", height=12)
+g = sns.pairplot(feature_df, diag_kind="kde", aspect=1.5)
 g.map_lower(sns.kdeplot, levels=4, color=".2")
 g.fig.suptitle('xbt: y_changeAskPrice', fontsize=16)
 plt.tight_layout()
-plt.savefig('xbt_feature_pairplot')
+plt.savefig('Figures/xbt_feature_pairplot')
 plt.show()
 
 # TODO: If time, consider subsampling: can we predict large or smalle values better, etc.
