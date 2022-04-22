@@ -1,4 +1,4 @@
-# FE3 Final Assignment
+# Machine Learning on Cryptocurrency Perpetual Swaps
 
 In this assignment we use BitMEX' publicly available data (https://public.bitmex.com/) to study three large-tick cryptocurrency swap contracts:
 1. XBTUSD
